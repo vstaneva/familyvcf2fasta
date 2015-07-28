@@ -92,8 +92,8 @@ def VCFtoFASTA(refaddress, windowaddress, vcffileaddress, fasta1address, fasta2a
 	#TODO: construct a test where sequence2 also has some indels and see how this behaves.
 
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
-	fasta1.write(">hg19|chr21|produced using variants from "+vcffileaddress+"|first sequence\n")
-	fasta2.write(">hg19|chr21|produced using variants from "+vcffileaddress+"|second sequence\n")
+	fasta1.write(">hg19|chr21|produced using variants from "+vcffileaddress+"|first sequence")
+	fasta2.write(">hg19|chr21|produced using variants from "+vcffileaddress+"|second sequence")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(sequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(sequence2), 60))+"\n")
 	
