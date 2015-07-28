@@ -1,8 +1,9 @@
 import ConfigParser
+import sys
 
-def prepMember(member):
+def prepMember(member, configpath):
 	config = ConfigParser.RawConfigParser()
-	config.read("family.config")
+	config.read(configpath)
 	ref = config.get("Common", "reference")
 	win = config.get("Common", "window")
 	vcf = config.get(member, "vcf_file")
@@ -115,12 +116,21 @@ def VCFtoFASTA(member):
 	
 	fasta1.close()
 	fasta2.close()
+	
+try:	
+	configuration = sys.argv[1]
+	mother = prepMember("Mother", configuration)
+	father = prepMember("Father", configuration)
+	child = prepMember("Child", configuration)
+	VCFtoFASTA(child)
+	VCFtoFASTA(mother)
+	VCFtoFASTA(father)
+except IndexError:
+	print "Please select a configuration file."
+except:
+	print "The configuration file you selected is invalid."
+	
 
-mother = prepMember("Mother")
-father = prepMember("Father")
-child = prepMember("Child")
 
-VCFtoFASTA(child)
-VCFtoFASTA(mother)
-VCFtoFASTA(father)
+
 
