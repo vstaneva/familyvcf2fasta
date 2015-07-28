@@ -1,9 +1,21 @@
-def VCFtoFASTA(refaddress, windowaddress, vcffileaddress, fasta1address, fasta2address):
-	ref = open(refaddress, "r")
-	window = open(windowaddress, "r")
-	vcffile = open(vcffileaddress, "r")
-	fasta1 = open(fasta1address, "w")
-	fasta2 = open(fasta2address, "w")
+import ConfigParser
+
+def prepMember(member):
+	config = ConfigParser.RawConfigParser()
+	config.read("family.config")
+	ref = config.get("Common", "reference")
+	win = config.get("Common", "window")
+	vcf = config.get(member, "vcf_file")
+	f1 = config.get(member, "fasta1")
+	f2 = config.get(member, "fasta2")
+	return [ref, win, vcf, f1, f2]
+
+def VCFtoFASTA(member):
+	ref = open(member[0], "r")
+	window = open(member[1], "r")
+	vcffile = open(member[2], "r")
+	fasta1 = open(member[3], "w")
+	fasta2 = open(member[4], "w")
 
 	start = int(window.readline())
 	finish = int(window.readline())
@@ -92,8 +104,8 @@ def VCFtoFASTA(refaddress, windowaddress, vcffileaddress, fasta1address, fasta2a
 	#TODO: construct a test where sequence2 also has some indels and see how this behaves.
 
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
-	fasta1.write(">hg19|chr21|produced using variants from "+vcffileaddress+"|first sequence\n")
-	fasta2.write(">hg19|chr21|produced using variants from "+vcffileaddress+"|second sequence\n")
+	fasta1.write(">hg19|chr21|produced using variants from "+member[2]+"|first sequence\n")
+	fasta2.write(">hg19|chr21|produced using variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(sequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(sequence2), 60))+"\n")
 	
@@ -104,5 +116,11 @@ def VCFtoFASTA(refaddress, windowaddress, vcffileaddress, fasta1address, fasta2a
 	fasta1.close()
 	fasta2.close()
 
-VCFtoFASTA("build37-chr21.fa","NA12880-chr21.posinfo", "NA12880-chr21-unphased-clean.vcf", "NA12880-chr21_1.fa", "NA12880-chr21_2.fa")
+mother = prepMember("Mother")
+father = prepMember("Father")
+child = prepMember("Child")
+
+VCFtoFASTA(child)
+VCFtoFASTA(mother)
+VCFtoFASTA(father)
 

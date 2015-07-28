@@ -8,12 +8,12 @@ fasta1 = NA12880-chr21_1.fa
 fasta2 = NA12880-chr21_2.fa
 
 [Mother]
-vcf_file = NA12878-chr21-clean.vcf
+vcf_file = NA12878-chr21-unphased-clean.vcf
 fasta1 = NA12878-chr21_1.fa
 fasta2 = NA12878-chr21_2.fa
 
 [Father]
-vcf_file = NA12877-chr21-clean.vcf
+vcf_file = NA12877-chr21-unphased-clean.vcf
 fasta1 = NA12877-chr21_1.fa
 fasta2 = NA12877-chr21_2.fa
 
