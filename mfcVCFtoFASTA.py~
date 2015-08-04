@@ -121,8 +121,8 @@ def VCFtoFASTA(member):
 	#TODO: construct a test where sequence2 also has some indels and see how this behaves. UPDATE: this might be actually working...
 	
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
-	fasta1.write(">hg19|chromosome "+chrom[1:]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|first sequence\n")
-	fasta2.write(">hg19|chromosome "+chrom[1:]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
+	fasta1.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|first sequence\n")
+	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	

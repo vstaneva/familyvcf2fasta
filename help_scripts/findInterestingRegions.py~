@@ -27,6 +27,8 @@ def getInterestingRegions (childPath, threshold, regionPath):
 			continue
 		if info[9][0:3]=="1/1": #homozygous, doesn't count
 			continue
+		#print line
+		#time.sleep(0.5)
 		if not info[0]==prevchr:
 			win = deque([])
 		tags = info[8]

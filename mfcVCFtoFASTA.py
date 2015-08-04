@@ -138,17 +138,18 @@ try:
 	mother = prepMember("Mother", configuration)
 	father = prepMember("Father", configuration)
 	child = prepMember("Child", configuration)
+	try:
+		VCFtoFASTA(child)
+		VCFtoFASTA(mother)
+		VCFtoFASTA(father)
+	except IOError:
+		print "Please make sure the path to the resulting FASTA file is valid."
 except IndexError:
 	print "Please select a configuration file."
 except:
 	print "The configuration file you selected is invalid."
 	
-try:
-	VCFtoFASTA(child)
-	VCFtoFASTA(mother)
-	VCFtoFASTA(father)
-except IOError:
-	print "Please make sure the path to the resulting FASTA file is valid."
+
 
 
 
