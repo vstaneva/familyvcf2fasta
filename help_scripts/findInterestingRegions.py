@@ -1,7 +1,6 @@
 from collections import deque
 import ConfigParser
 import sys
-import time
 
 def prepVCF(configpath):
 	config = ConfigParser.RawConfigParser()
@@ -19,8 +18,6 @@ def getInterestingRegions (childPath, threshold, regionPath):
 	for line in child:
 		if line[0]=='#': #a header, no variant information
 			continue
-		if line[0]=='X': #only include chromosomes 1..22; TODO: make it so we can include ALL chromosomes
-			break
 		info = line.split()
 		pos = int(info[1])
 		if len(info[3])==len(info[4]): #a replacement, not an INDEL, doesn't count
