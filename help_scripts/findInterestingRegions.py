@@ -3,6 +3,13 @@ import ConfigParser
 import sys
 
 def prepVCF(configpath):
+	"""
+	Assuming configpath is a config file with sections Child, Threshold and Regions.
+	Child's vcf_path describes the VCF file of the child of the trio. Regions's path
+	describes the path to the output file. Threshold's value is an integer that
+	describes what is the minimum number of "interesting" variants that has to be
+	present in the 1000bps window so that this window makes it to the output Results file.	
+	"""
 	config = ConfigParser.RawConfigParser()
 	config.read(configpath)
 	child = config.get("Child", "vcf_path")
@@ -11,10 +18,24 @@ def prepVCF(configpath):
 	return [child, thres, res]
 
 def getInterestingRegions (childPath, threshold, regionPath):
+	"""
+	Assumming childPath is a path to a VCF file, threshold is an integer and regionPath
+	is a path to a text file. We look through the VCF file and find the "interesting"
+	variants. An "interesting" variant is a variant that is a heterozygous INDEL
+	(insertion or deletion). These "interesting" variants are difficult to phase,
+	since homozygous variants, naturally, occur in both the mother and the father
+	copy of the chromosome, and SNP replacements of one character (e.g. A->C) can be
+	phased with tools like WhatsHap.
+	
+	The resulting file, recorded in regionPath, gives information about the number of the
+	interesting variants in a window of 1000 bps and then presents the chromosome,
+	the start and the end of the window in the format of the .posinfo file. The idea is
+	that one can copy a window from the regionPath file straight to the .posinfo file.
+	"""
 	child = open(childPath, "r")
 	region = open(regionPath, "w")
-	win = deque([])
-	prevchr = '0'
+	win = deque([]) #save the interesting variant positions in radius of 1000 bps
+	prevchr = '0' #the chromosome of the previous line
 	for line in child:
 		if line[0]=='#': #a header, no variant information
 			continue
@@ -24,16 +45,14 @@ def getInterestingRegions (childPath, threshold, regionPath):
 			continue
 		if info[9][0:3]=="1/1": #homozygous, doesn't count
 			continue
-		if not info[0]==prevchr:
+		if not info[0]==prevchr: #if you get on a new chromosome, start counting over
 			win = deque([])
-		tags = info[8]
-		vals = info[9]
 		win.append(pos)
 		uppest = win.popleft()
-		while pos - uppest > 1000 and len(win):
+		while pos - uppest > 1000 and len(win): #update how many interesting variants are there in radius of 1000 bps
 			uppest = win.popleft()
 		win.appendleft(uppest)
-		windowsize = len(win)
+		windowsize = len(win) #how many interesting (heterozygous INDELs) variants exist in these 1000 bps
 		if windowsize>=threshold:
 			region.write( "----- Region with " + str(windowsize) + " interesting variants: -----\n")
 			region.write(info[0]+"\n")
@@ -53,6 +72,7 @@ try:
 		print "Please make sure the path to the resulting FASTA file is valid."
 except IndexError:
 	print "Please select a configuration file."
-#except:
-#	print "The configuration file you selected is invalid."
+except:
+	print "The configuration file you selected is invalid."
+	raise
 	
