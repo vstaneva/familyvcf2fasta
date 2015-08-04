@@ -68,17 +68,13 @@ def VCFtoFASTA(member):
 		si2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
 		uscore1 = sum(used1[winpos+si1:winpos+len(refpos)+si1])
 		uscore2 = sum(used2[winpos+si2:winpos+len(refpos)+si2])
-		if homozygous:
-			print "Homozygous"
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file
-			print "Add variant to seq1"
 			sequence1[winpos+si1:winpos+len(refpos)+si1] = list(altpos)
 			ind1[winpos] = len(altpos)-len(refpos)
 			used1[winpos+si1:winpos+len(refpos)+si1] = [1]*len(refpos)
 			if not homozygous:
 				continue
 		if uscore2 == 0:
-			print "Add variant to seq2"
 			sequence2[winpos+si2:winpos+len(refpos)+si2] = list(altpos)
 			ind2[winpos] = len(altpos)-len(refpos)
 			used2[winpos+si2:winpos+len(refpos)+si2] = [1]*len(refpos)
@@ -88,9 +84,6 @@ def VCFtoFASTA(member):
 
 	gaps1 = 0
 	gaps2 = 0
-	#print len(sequence1), len(sequence2), len(refwin)
-	#print "\n".join("".join(sequence1[i:i+60]) for i in xrange(0, len(sequence1), 60))+"\n"
-	#print "\n".join("".join(sequence2[i:i+60]) for i in xrange(0, len(sequence2), 60))+"\n"
 	#now, we build the alignment of the sequences
 	for nucind in xrange(len(ind1)):
 		gaplen = ind1[nucind]*((-1) if ind1[nucind]<0 else 1)
@@ -120,11 +113,6 @@ def VCFtoFASTA(member):
 
 	#TODO: construct a test where sequence2 also has some indels and see how this behaves. UPDATE: this might be actually working...
 	
-	#print "-------------------------------------------------------------------------------"
-	#print "\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n"
-	#print "\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n"
-
-
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
 	fasta1.write(">hg19|chr21|produced using variants from "+member[2]+"|first sequence\n")
 	fasta2.write(">hg19|chr21|produced using variants from "+member[2]+"|second sequence\n")
@@ -140,18 +128,20 @@ def VCFtoFASTA(member):
 	
 try:	
 	configuration = sys.argv[1]
+	mother = prepMember("Mother", configuration)
+	father = prepMember("Father", configuration)
+	child = prepMember("Child", configuration)
 except IndexError:
 	print "Please select a configuration file."
+except IOError:
+	print "Please make sure the path to the resulting FASTA file is valid."
 except:
 	print "The configuration file you selected is invalid."
 	
-
-mother = prepMember("Mother", configuration)
-father = prepMember("Father", configuration)
-child = prepMember("Child", configuration)
 VCFtoFASTA(child)
 VCFtoFASTA(mother)
 VCFtoFASTA(father)
+
 
 
 
