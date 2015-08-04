@@ -84,6 +84,7 @@ def VCFtoFASTA(member):
 
 	gaps1 = 0
 	gaps2 = 0
+	ind1.append(0)
 	#now, we build the alignment of the sequences
 	for nucind in xrange(len(ind1)):
 		gaplen = ind1[nucind]*((-1) if ind1[nucind]<0 else 1)
@@ -94,7 +95,9 @@ def VCFtoFASTA(member):
 		if ind1[nucind]<0: #there was a deletion
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
-			gaps1+=gaplen	
+			gaps1+=gaplen		
+	print len(gappedsequence1), len(gappedsequence2)
+	print len(sequence1), len(sequence2)
 	#watch out: i have a feeling that if this fails occasionally,
 	#it would be because I only check for sequence1's insertions and deletions
 	#but I don't check for sequence2's insertions and deletions
