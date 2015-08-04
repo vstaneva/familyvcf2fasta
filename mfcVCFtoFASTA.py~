@@ -1,5 +1,6 @@
 import ConfigParser
 import sys
+import time
 
 def prepMember(member, configpath):
 	config = ConfigParser.RawConfigParser()
@@ -17,7 +18,8 @@ def VCFtoFASTA(member):
 	vcffile = open(member[2], "r")
 	fasta1 = open(member[3], "w")
 	fasta2 = open(member[4], "w")
-
+	
+	chrom = ">"+window.readline()
 	start = int(window.readline())
 	finish = int(window.readline())
 
@@ -25,7 +27,10 @@ def VCFtoFASTA(member):
 
 
 	#first, we get the FASTA sequence between positions start and finish
-	ref.readline()
+	chrnum = ref.readline()
+
+	while not chrnum == chrom: #make sure we're at the right chromosome
+		chrnum = ref.readline()
 
 	posskipped = 0
 
@@ -51,6 +56,8 @@ def VCFtoFASTA(member):
 	#second, we insert the changes from the VCF into the sequences
 	for line in vcffile:
 		if line[0]=='#':
+			continue
+		if not line[0] == chrom:
 			continue
 		info = line.split()
 		pos = int(info[1])
@@ -114,8 +121,8 @@ def VCFtoFASTA(member):
 	#TODO: construct a test where sequence2 also has some indels and see how this behaves. UPDATE: this might be actually working...
 	
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
-	fasta1.write(">hg19|chr21|produced using variants from "+member[2]+"|first sequence\n")
-	fasta2.write(">hg19|chr21|produced using variants from "+member[2]+"|second sequence\n")
+	fasta1.write(">hg19|chromosome "+chrom[1:]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|first sequence\n")
+	fasta2.write(">hg19|chromosome "+chrom[1:]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	
@@ -133,15 +140,15 @@ try:
 	child = prepMember("Child", configuration)
 except IndexError:
 	print "Please select a configuration file."
-except IOError:
-	print "Please make sure the path to the resulting FASTA file is valid."
 except:
 	print "The configuration file you selected is invalid."
 	
-VCFtoFASTA(child)
-VCFtoFASTA(mother)
-VCFtoFASTA(father)
-
+try:
+	VCFtoFASTA(child)
+	VCFtoFASTA(mother)
+	VCFtoFASTA(father)
+except IOError:
+	print "Please make sure the path to the resulting FASTA file is valid."
 
 
 
