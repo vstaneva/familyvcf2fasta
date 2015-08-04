@@ -1,0 +1,1 @@
+The results from running VCF2FASTA with the example input files will appear here.
