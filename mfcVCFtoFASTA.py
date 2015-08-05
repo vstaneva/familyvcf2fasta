@@ -16,6 +16,25 @@ def prepMember(member, configpath):
 	f2 = config.get(member, "fasta2")
 	return [ref, win, vcf, f1, f2]
 
+def doesLineCount(line):
+	"""
+	Assuming that line is a line from a VCF(v4.1) file, this function
+	returns a True/False value depending on whether or not we should use
+	this line of the VCF file. The function returns True if and only if
+	the variant is present and is an insertion, deletion or replacement.
+	"""
+	if (
+		line.find("[")==(-1) and
+		line.find("]")==(-1) and
+		line.find("<CGA_CNVWIN>")==(-1) and
+		line.find("IMPRECISE")==(-1) and
+		line.find("<CGA_NOCALL>")==(-1) and
+		not (line.split())[4] == "."
+	):
+		return True
+	else:
+		return False
+
 def VCFtoFASTA(member):
 	"""
 	Assuming that member gives us the information about a child, a mother
@@ -72,6 +91,8 @@ def VCFtoFASTA(member):
 	#second, we insert the changes from the VCF into the sequences
 	for line in vcffile:
 		if line[0]=='#': #header line
+			continue
+		if not doesLineCount(line):
 			continue
 		if not line[0] == chrom: #wrong chromosome
 			continue

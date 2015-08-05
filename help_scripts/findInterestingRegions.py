@@ -17,6 +17,26 @@ def prepVCF(configpath):
 	res = config.get("Regions", "path")
 	return [child, thres, res]
 
+def doesLineCount(line):
+	"""
+	Assuming that line is a line from a VCF(v4.1) file, this function
+	returns a True/False value depending on whether or not we should use
+	this line of the VCF file. The function returns True if and only if
+	the variant is present and is an insertion, deletion or replacement.
+	"""
+	if (
+		line.find("[")==(-1) and
+		line.find("]")==(-1) and
+		line.find("<CGA_CNVWIN>")==(-1) and
+		line.find("IMPRECISE")==(-1) and
+		line.find("<CGA_NOCALL>")==(-1) and
+		not line.split()[4] == "."
+	):
+		return True
+	else:
+		return False
+	
+
 def getInterestingRegions (childPath, threshold, regionPath):
 	"""
 	Assumming childPath is a path to a VCF file, threshold is an integer and regionPath
@@ -38,6 +58,8 @@ def getInterestingRegions (childPath, threshold, regionPath):
 	prevchr = '0' #the chromosome of the previous line
 	for line in child:
 		if line[0]=='#': #a header, no variant information
+			continue
+		if not doesLineCount(line):
 			continue
 		info = line.split()
 		pos = int(info[1])
