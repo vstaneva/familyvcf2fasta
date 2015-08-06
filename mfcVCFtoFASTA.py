@@ -1,5 +1,6 @@
 import ConfigParser
 import sys
+import subprocess
 
 def prepMember(member, configpath):
 	"""
@@ -184,7 +185,7 @@ except IndexError:
 except:
 	print "The configuration file you selected is invalid."
 	
-
+subprocess.check_call("make -C phasing_family/src", shell=True)
 
 
 
