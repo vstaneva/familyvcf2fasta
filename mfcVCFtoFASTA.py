@@ -169,6 +169,20 @@ def VCFtoFASTA(member):
 	fasta1.close()
 	fasta2.close()
 	
+def callSimilarityPhaser(mother, father, child):
+	mother_fasta1 = mother[3]
+	mother_fasta2 = mother[4]
+	
+	father_fasta1 = father[3]
+	father_fasta2 = father[4]
+	
+	child_fasta1 = child[3]
+	child_fasta2 = child[4]
+	
+	print mother_fasta1, mother_fasta2, child_fasta1, child_fasta2
+	#subprocess.check_call("make -C phasing_family/src", shell=True)
+	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} ".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2), shell=True)	
+	
 try:	
 	configuration = sys.argv[1]
 	mother = prepMember("Mother", configuration)
@@ -184,8 +198,7 @@ except IndexError:
 	print "Please select a configuration file."
 except:
 	print "The configuration file you selected is invalid."
-	
-subprocess.check_call("make -C phasing_family/src", shell=True)
 
+callSimilarityPhaser(mother, father, child)
 
 
