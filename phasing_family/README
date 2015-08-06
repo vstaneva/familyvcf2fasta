@@ -1,0 +1,21 @@
+Mother-Father-Child Trio aligner
+===============================
+
+Computes the m-f-c similarity among a mother-father-childe trio. 
+and the phasing of the child that leads to the best alignment.
+
+Ussage
+------
+
+mfc_similarity_phaser fatherA.fa fatherB.fa motherA.fa motherB.fa childA.fa childB.fa
+
+
+The input consist in the haplotype of the parents and of the child, expressed as a 
+pair-wise sequence alignment. 
+Wether the input alignments are correctly phased or not is indistinct for the algorithm.
+
+For more details see:
+
+"Haplotyping via diploid sequence alignment"
+Veli Mäkinen and Daniel Valenzuela
+
