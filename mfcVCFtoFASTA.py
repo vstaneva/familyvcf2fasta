@@ -95,10 +95,10 @@ def VCFtoFASTA(member):
 			continue
 		if not doesLineCount(line):
 			continue
-		if not line[0] == chrom: #wrong chromosome
-			continue
 		info = line.split()
 		pos = int(info[1])
+		if not info[0] == chrom[1:-1]: #wrong chromosome
+			continue
 		refpos = list(info[3].strip())
 		altpos = list(info[4].strip())
 		if pos<start: #haven't reached the window yet
@@ -207,7 +207,7 @@ def vcfToFasta():
 	return (mother, father, child)
 
 (mother, father, child) = vcfToFasta()
-callSimilarityPhaser(mother, father, child)
+#callSimilarityPhaser(mother, father, child)
 #phasedStringToVcf()
 
 
