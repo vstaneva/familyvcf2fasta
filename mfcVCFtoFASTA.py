@@ -156,11 +156,13 @@ def VCFtoFASTA(member):
 			gaps2+=gaplen	
 	#watch out: it might turn out that this alignment is not enough
 	
+	#TODO: make sure commas (as in ALT="AAG,TTGTAAG") don't go into the FASTA files. quick fix for now:replace commas with Ns
+	
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
 	fasta1.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|first sequence\n")
 	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
-	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
-	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
+	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
+	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	
 	vcffile.close()
 	ref.close()
@@ -203,11 +205,12 @@ def vcfToFasta():
 		print "Please select a configuration file."
 	except:
 		print "The configuration file you selected is invalid."
+		raise
 	
 	return (mother, father, child)
 
 (mother, father, child) = vcfToFasta()
-#callSimilarityPhaser(mother, father, child)
+callSimilarityPhaser(mother, father, child)
 #phasedStringToVcf()
 
 
