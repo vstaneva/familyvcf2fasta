@@ -1,2 +1,4 @@
 language: python
-script: python mfcVCFtoFASTA.py family.config
+script:
+  - python mfcVCFtoFASTA.py family.config
+  - python mfcVCFtoFASTA.py family2.config

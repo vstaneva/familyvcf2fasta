@@ -210,7 +210,7 @@ def vcfToFasta():
 	return (mother, father, child)
 
 (mother, father, child) = vcfToFasta()
-callSimilarityPhaser(mother, father, child)
+#callSimilarityPhaser(mother, father, child)
 #phasedStringToVcf()
 
 
