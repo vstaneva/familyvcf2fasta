@@ -114,19 +114,21 @@ def VCFtoFASTA(member):
 		uscore1 = sum(used1[winpos+si1:winpos+len(refpos)+si1]) #is there anything used in the positions of the variant
 		uscore2 = sum(used2[winpos+si2:winpos+len(refpos)+si2])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file
+			print si1, si2, "We're adding this to position", winpos, "in sequence 1"
 			sequence1[winpos+si1:winpos+len(refpos)+si1] = list(altpos)
 			ind1[winpos] = len(altpos)-len(refpos)
 			used1[winpos+si1:winpos+len(refpos)+si1] = [1]*len(refpos)
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
+			print si1, si2, "We're adding this to position", winpos, "in sequence 2"
 			sequence2[winpos+si2:winpos+len(refpos)+si2] = list(altpos)
 			ind2[winpos] = len(altpos)-len(refpos)
 			used2[winpos+si2:winpos+len(refpos)+si2] = [1]*len(refpos)
 
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
 	gappedsequence2 = list(sequence2)
-
+	happening = 0
 	gaps1 = 0
 	gaps2 = 0
 	#now, we build the alignment of the sequences (in fact, only semi-align: put gaps where there are INDELS)
@@ -137,10 +139,20 @@ def VCFtoFASTA(member):
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			gaps2+=gaplen
+			happening+=1
+			#fasta1.write("\n>we had an insertion in Seq 1.|{0}\n".format(str(happening)))
+			#fasta2.write("\n>we had an insertion in Seq 1.|{0}\n".format(str(happening)))
+			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
+			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 		if ind1[nucind]<0: #there was a deletion
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			gaps1+=gaplen	
+			happening+=1
+			#fasta1.write("\n>we had a deletion in Seq 1.|{0}\n".format(str(happening)))
+			#fasta2.write("\n>we had a deletion in Seq 1.|{0}\n".format(str(happening)))
+			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
+			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	gaps1 = 0
 	gaps2 = 0
 	#put gaps with respect to the second sequence
@@ -150,10 +162,20 @@ def VCFtoFASTA(member):
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			gaps1+=gaplen
+			happening+=1
+			#fasta1.write("\n>we had an insertion in Seq 2.|{0}\n".format(str(happening)))
+			#fasta2.write("\n>we had an insertion in Seq 2.|{0}\n".format(str(happening)))
+			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
+			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 		if ind2[nucind]<0: #there was a deletion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
-			gaps2+=gaplen	
+			gaps2+=gaplen
+			happening+=1
+			#fasta1.write("\n>we had a deletion in Seq 2.|{0}\n".format(str(happening)))
+			#fasta2.write("\n>we had a deletion in Seq 2.|{0}\n".format(str(happening)))
+			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
+			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")	
 	#watch out: it might turn out that this alignment is not enough
 	
 	#TODO: make sure commas (as in ALT="AAG,TTGTAAG") don't go into the FASTA files. quick fix for now:replace commas with Ns
