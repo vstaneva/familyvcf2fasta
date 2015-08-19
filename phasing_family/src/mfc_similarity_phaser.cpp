@@ -91,7 +91,7 @@ int main(int argc, char ** argv) {
   }
   
   double time = Utils::StopClock();
-  if (score_1 == score_2) {
+  if (score_1 != score_2) {
     fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
   }
   assert(score_1 == score_2);
