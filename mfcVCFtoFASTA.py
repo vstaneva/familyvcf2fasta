@@ -1,6 +1,7 @@
 import ConfigParser
 import sys
 import subprocess
+import time
 
 def prepMember(member, configpath):
 	"""
@@ -57,7 +58,7 @@ def VCFtoFASTA(member):
 	
 	chrom = ">"+window.readline() #in the FASTA genome file, every chromosome is a header and starts with ">"
 	start = int(window.readline()) #this is the start of the window (included in the reference window)
-	finish = int(window.readline()) #this is the end of the window (included in the reference window)
+	finish = int(window.readline())-1 #this is the end of the window (not included in the reference window)
 
 	refwin = [] #a list that corresponds to the reference window between the start and the end
 
@@ -105,6 +106,8 @@ def VCFtoFASTA(member):
 			continue
 		if pos>finish: #went past the window
 			break
+		if ',' in altpos:
+			continue #we don't want to see the commas for now TODO: divide into two lines, check VCF to make sure these aren't phased
 		#we are surely in the window
 		#now we check whether the variant is homozygous or heterozygous
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
@@ -113,15 +116,13 @@ def VCFtoFASTA(member):
 		si2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
 		uscore1 = sum(used1[winpos+si1:winpos+len(refpos)+si1]) #is there anything used in the positions of the variant
 		uscore2 = sum(used2[winpos+si2:winpos+len(refpos)+si2])
-		if uscore1 == 0: #we can add this variant to the 1st FASTA file
-			print si1, si2, "We're adding this to position", winpos, "in sequence 1"
+		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
 			sequence1[winpos+si1:winpos+len(refpos)+si1] = list(altpos)
 			ind1[winpos] = len(altpos)-len(refpos)
 			used1[winpos+si1:winpos+len(refpos)+si1] = [1]*len(refpos)
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
-			print si1, si2, "We're adding this to position", winpos, "in sequence 2"
 			sequence2[winpos+si2:winpos+len(refpos)+si2] = list(altpos)
 			ind2[winpos] = len(altpos)-len(refpos)
 			used2[winpos+si2:winpos+len(refpos)+si2] = [1]*len(refpos)
@@ -140,19 +141,11 @@ def VCFtoFASTA(member):
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			gaps2+=gaplen
 			happening+=1
-			#fasta1.write("\n>we had an insertion in Seq 1.|{0}\n".format(str(happening)))
-			#fasta2.write("\n>we had an insertion in Seq 1.|{0}\n".format(str(happening)))
-			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
-			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 		if ind1[nucind]<0: #there was a deletion
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			gaps1+=gaplen	
 			happening+=1
-			#fasta1.write("\n>we had a deletion in Seq 1.|{0}\n".format(str(happening)))
-			#fasta2.write("\n>we had a deletion in Seq 1.|{0}\n".format(str(happening)))
-			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
-			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	gaps1 = 0
 	gaps2 = 0
 	#put gaps with respect to the second sequence
@@ -163,28 +156,17 @@ def VCFtoFASTA(member):
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			gaps1+=gaplen
 			happening+=1
-			#fasta1.write("\n>we had an insertion in Seq 2.|{0}\n".format(str(happening)))
-			#fasta2.write("\n>we had an insertion in Seq 2.|{0}\n".format(str(happening)))
-			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
-			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
 		if ind2[nucind]<0: #there was a deletion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			gaps2+=gaplen
 			happening+=1
-			#fasta1.write("\n>we had a deletion in Seq 2.|{0}\n".format(str(happening)))
-			#fasta2.write("\n>we had a deletion in Seq 2.|{0}\n".format(str(happening)))
-			#fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
-			#fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")	
-	#watch out: it might turn out that this alignment is not enough
-	
-	#TODO: make sure commas (as in ALT="AAG,TTGTAAG") don't go into the FASTA files. quick fix for now:replace commas with Ns
 	
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
 	fasta1.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|first sequence\n")
 	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
-	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence1), 60))+"\n")
-	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]).replace(",","N") for i in xrange(0, len(gappedsequence2), 60))+"\n")
+	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
+	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	
 	vcffile.close()
 	ref.close()
@@ -232,7 +214,7 @@ def vcfToFasta():
 	return (mother, father, child)
 
 (mother, father, child) = vcfToFasta()
-#callSimilarityPhaser(mother, father, child)
+callSimilarityPhaser(mother, father, child)
 #phasedStringToVcf()
 
 

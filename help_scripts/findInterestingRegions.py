@@ -79,7 +79,7 @@ def getInterestingRegions (childPath, threshold, regionPath):
 			region.write( "----- Region with " + str(windowsize) + " interesting variants: -----\n")
 			region.write(info[0]+"\n")
 			region.write(str(pos-1000)+"\n")
-			region.write(str(pos)+"\n")
+			region.write(str(pos+1)+"\n")
 		prevchr = info[0]
 
 	child.close()
