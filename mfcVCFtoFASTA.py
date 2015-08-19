@@ -175,6 +175,9 @@ def VCFtoFASTA(member):
 	fasta1.close()
 	fasta2.close()
 	
+	#here we return the two ind lists
+	return [ind1, ind2]
+	
 def callSimilarityPhaser(mother, father, child):
 	mother_fasta1 = mother[3]
 	mother_fasta2 = mother[4]
@@ -193,16 +196,16 @@ def phasedStringToVCF(child):
 	stringfile = open("phasing_family/src/phase_string.txt", "r")
 	phstring = stringfile.read().strip()
 
-def vcfToFasta():	
+def getFamilyFASTA():	
 	try:	
 		configuration = sys.argv[1]
 		mother = prepMember("Mother", configuration)
 		father = prepMember("Father", configuration)
 		child = prepMember("Child", configuration)
-		try:
-			VCFtoFASTA(child)
-			VCFtoFASTA(mother)
-			VCFtoFASTA(father)
+		try: #attach the ind lists for the two FASTA files to the individual
+			child = child + VCFtoFASTA(child)
+			mother = mother +VCFtoFASTA(mother)
+			father = father + VCFtoFASTA(father)
 		except IOError:
 			print "Please make sure the path to the resulting FASTA file is valid."
 	except IndexError:
@@ -213,7 +216,7 @@ def vcfToFasta():
 	
 	return (mother, father, child)
 
-(mother, father, child) = vcfToFasta()
+(mother, father, child) = getFamilyFASTA()
 callSimilarityPhaser(mother, father, child)
 #phasedStringToVcf()
 
