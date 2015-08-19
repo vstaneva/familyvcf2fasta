@@ -194,7 +194,11 @@ def callSimilarityPhaser(mother, father, child):
 	
 def phasedStringToVCF(child):
 	stringfile = open("phasing_family/src/phase_string.txt", "r")
-	phstring = stringfile.read().strip()
+	phaseString = list(stringfile.read().strip())
+	print phaseString
+	#get a list of all the occurences of 1 and 0 in the phase string
+	knownPhases = [(i,x) for i,x in enumerate(phaseString) if not x == '?']
+	print knownPhases
 
 def getFamilyFASTA():	
 	try:	
@@ -218,6 +222,6 @@ def getFamilyFASTA():
 
 (mother, father, child) = getFamilyFASTA()
 callSimilarityPhaser(mother, father, child)
-#phasedStringToVcf()
+phasedStringToVCF(child)
 
 
