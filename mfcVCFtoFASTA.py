@@ -91,6 +91,7 @@ def VCFtoFASTA(member):
 	homozygous = False #a homozygous variant is applied to both sequences
 
 	#second, we insert the changes from the VCF into the sequences
+	variants_counter = 0
 	for line in vcffile:
 		if line[0]=='#': #header line
 			continue
@@ -110,6 +111,13 @@ def VCFtoFASTA(member):
 			continue #we don't want to see the commas for now TODO: divide into two lines, check VCF to make sure these aren't phased
 		#we are surely in the window
 		#now we check whether the variant is homozygous or heterozygous
+		
+		print "processing the following line:"
+		print line
+
+		print "Refpos:" + str(refpos)
+		print "Altpos:" + str(altpos)
+		variants_counter = variants_counter + 1; 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
 		winpos = pos-start
 		si1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
@@ -117,16 +125,29 @@ def VCFtoFASTA(member):
 		uscore1 = sum(used1[winpos+si1:winpos+len(refpos)+si1]) #is there anything used in the positions of the variant
 		uscore2 = sum(used2[winpos+si2:winpos+len(refpos)+si2])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
+			old_len = len(sequence1)
 			sequence1[winpos+si1:winpos+len(refpos)+si1] = list(altpos)
+			new_len = len(sequence1)
+			delta = new_len - old_len
+			print "Actual delta:"+str(delta)
 			ind1[winpos] = len(altpos)-len(refpos)
+			print "Expected delta:"+str(ind1[winpos])
+			assert(ind1[winpos] == delta)	
 			used1[winpos+si1:winpos+len(refpos)+si1] = [1]*len(refpos)
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
+			old_len = len(sequence2)
 			sequence2[winpos+si2:winpos+len(refpos)+si2] = list(altpos)
+			new_len = len(sequence2)
+			delta = new_len - old_len
+			print "Actual delta:"+str(delta)
 			ind2[winpos] = len(altpos)-len(refpos)
+			print "Expected delta:"+str(ind2[winpos])
+			assert(delta == ind2[winpos])
 			used2[winpos+si2:winpos+len(refpos)+si2] = [1]*len(refpos)
 
+	print "We processed :"+str(variants_counter)+" variants"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
 	gappedsequence2 = list(sequence2)
 	happening = 0
@@ -161,37 +182,37 @@ def VCFtoFASTA(member):
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			gaps2+=gaplen
 			happening+=1
-	
+
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
 	fasta1.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|first sequence\n")
 	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
-	
+
 	vcffile.close()
 	ref.close()
 	window.close()
-	
+
 	fasta1.close()
 	fasta2.close()
-	
+
 	#here we return the two ind lists
 	return [ind1, ind2]
-	
+
 def callSimilarityPhaser(mother, father, child):
 	mother_fasta1 = mother[3]
 	mother_fasta2 = mother[4]
-	
+
 	father_fasta1 = father[3]
 	father_fasta2 = father[4]
-	
+
 	child_fasta1 = child[3]
 	child_fasta2 = child[4]
-	
+
 	print mother_fasta1, mother_fasta2, child_fasta1, child_fasta2
 	subprocess.check_call("make -C phasing_family/src", shell=True)
 	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} ".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2), shell=True)
-	
+
 def phasedStringToVCF(child):
 	stringfile = open("phase_string.txt", "r")
 	phaseString = list(stringfile.read().strip())
@@ -217,7 +238,7 @@ def getFamilyFASTA():
 	except:
 		print "The configuration file you selected is invalid."
 		raise
-	
+
 	return (mother, father, child)
 
 (mother, father, child) = getFamilyFASTA()
