@@ -101,13 +101,13 @@ def VCFtoFASTA(member):
 		pos = int(info[1])
 		if not info[0] == chrom[1:-1]: #wrong chromosome
 			continue
-		refpos = list(info[3].strip())
-		altpos = list(info[4].strip())
+		ref_seq = list(info[3].strip())
+		alt_seq = list(info[4].strip())
 		if pos<start: #haven't reached the window yet
 			continue
 		if pos>finish: #went past the window
 			break
-		if ',' in altpos:
+		if ',' in alt_seq:
 			continue #we don't want to see the commas for now TODO: divide into two lines, check VCF to make sure these aren't phased
 		#we are surely in the window
 		#now we check whether the variant is homozygous or heterozygous
@@ -115,37 +115,42 @@ def VCFtoFASTA(member):
 		print "processing the following line:"
 		print line
 
-		print "Refpos:" + str(refpos)
-		print "Altpos:" + str(altpos)
+		print "ref_seq:" + str(ref_seq)
+		print "alt_pos:" + str(alt_seq)
 		variants_counter = variants_counter + 1; 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
 		winpos = pos-start
-		si1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
-		si2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
-		uscore1 = sum(used1[winpos+si1:winpos+len(refpos)+si1]) #is there anything used in the positions of the variant
-		uscore2 = sum(used2[winpos+si2:winpos+len(refpos)+si2])
+		offset_1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
+		offset_2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
+		uscore1 = sum(used1[winpos+offset_1:winpos+len(ref_seq)+offset_1]) #is there anything used in the positions of the variant
+		uscore2 = sum(used2[winpos+offset_2:winpos+len(ref_seq)+offset_2])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
 			old_len = len(sequence1)
-			sequence1[winpos+si1:winpos+len(refpos)+si1] = list(altpos)
+			#sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
+			sequence1 = sequence1[:winpos+offset_1] + list(alt_seq) + sequence1[winpos+len(ref_seq)+offset_1:]	
 			new_len = len(sequence1)
 			delta = new_len - old_len
+			print "winpos: "+str(winpos)
+			print "offset: "+str(offset_1)
+			print "Old len: "+str(old_len)
+			print "New len: "+str(new_len)
 			print "Actual delta:"+str(delta)
-			ind1[winpos] = len(altpos)-len(refpos)
+			ind1[winpos] = len(alt_seq)-len(ref_seq)
 			print "Expected delta:"+str(ind1[winpos])
 			assert(ind1[winpos] == delta)	
-			used1[winpos+si1:winpos+len(refpos)+si1] = [1]*len(refpos)
+			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [1]*len(ref_seq)
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
 			old_len = len(sequence2)
-			sequence2[winpos+si2:winpos+len(refpos)+si2] = list(altpos)
+			sequence2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = list(alt_seq)
 			new_len = len(sequence2)
 			delta = new_len - old_len
 			print "Actual delta:"+str(delta)
-			ind2[winpos] = len(altpos)-len(refpos)
+			ind2[winpos] = len(alt_seq)-len(ref_seq)
 			print "Expected delta:"+str(ind2[winpos])
 			assert(delta == ind2[winpos])
-			used2[winpos+si2:winpos+len(refpos)+si2] = [1]*len(refpos)
+			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [1]*len(ref_seq)
 
 	print "We processed :"+str(variants_counter)+" variants"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
