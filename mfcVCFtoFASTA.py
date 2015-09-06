@@ -107,6 +107,8 @@ def VCFtoFASTA(member):
 			continue
 		if pos>finish: #went past the window
 			break
+		if pos + len(ref_seq) > finish: #variant will go out of the window
+			break
 		if ',' in alt_seq:
 			continue #we don't want to see the commas for now TODO: divide into two lines, check VCF to make sure these aren't phased
 		#we are surely in the window
@@ -115,8 +117,6 @@ def VCFtoFASTA(member):
 		print "processing the following line:"
 		print line
 
-		print "ref_seq:" + str(ref_seq)
-		print "alt_pos:" + str(alt_seq)
 		variants_counter = variants_counter + 1; 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
 		winpos = pos-start
@@ -129,15 +129,9 @@ def VCFtoFASTA(member):
 			#sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
 			sequence1 = sequence1[:winpos+offset_1] + list(alt_seq) + sequence1[winpos+len(ref_seq)+offset_1:]	
 			new_len = len(sequence1)
-			delta = new_len - old_len
-			print "winpos: "+str(winpos)
-			print "offset: "+str(offset_1)
-			print "Old len: "+str(old_len)
-			print "New len: "+str(new_len)
-			print "Actual delta:"+str(delta)
+			actual_delta = new_len - old_len
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
-			print "Expected delta:"+str(ind1[winpos])
-			assert(ind1[winpos] == delta)	
+			assert(ind1[winpos] == actual_delta)	
 			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [1]*len(ref_seq)
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
@@ -145,11 +139,9 @@ def VCFtoFASTA(member):
 			old_len = len(sequence2)
 			sequence2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = list(alt_seq)
 			new_len = len(sequence2)
-			delta = new_len - old_len
-			print "Actual delta:"+str(delta)
+			actual_delta = new_len - old_len
 			ind2[winpos] = len(alt_seq)-len(ref_seq)
-			print "Expected delta:"+str(ind2[winpos])
-			assert(delta == ind2[winpos])
+			assert(actual_delta == ind2[winpos])
 			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [1]*len(ref_seq)
 
 	print "We processed :"+str(variants_counter)+" variants"
