@@ -126,8 +126,7 @@ def VCFtoFASTA(member):
 		uscore2 = sum(used2[winpos+offset_2:winpos+len(ref_seq)+offset_2])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
 			old_len = len(sequence1)
-			#sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
-			sequence1 = sequence1[:winpos+offset_1] + list(alt_seq) + sequence1[winpos+len(ref_seq)+offset_1:]	
+			sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
 			new_len = len(sequence1)
 			actual_delta = new_len - old_len
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
