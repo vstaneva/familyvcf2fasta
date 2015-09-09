@@ -83,7 +83,7 @@ def VCFtoFASTA(member):
 
 	sequence1 = list(refwin) 
 	sequence2 = list(refwin) 
-	used1 = [0]*len(refwin) #indicates if an index is used to check for overlapping variants
+	used1 = [0]*len(refwin) #indicates if an index is used to check for overlapping variants. It uses variant_id to asociate the position to a specific variant.
 	used2 = [0]*len(refwin) #see above
 	ind1 = [0]*len(refwin) #indicates where are insertions/deletions
 	ind2 = [0]*len(refwin)
@@ -91,7 +91,7 @@ def VCFtoFASTA(member):
 	homozygous = False #a homozygous variant is applied to both sequences
 
 	#second, we insert the changes from the VCF into the sequences
-	variants_counter = 0
+	variant_id = 0
 	for line in vcffile:
 		if line[0]=='#': #header line
 			continue
@@ -117,7 +117,7 @@ def VCFtoFASTA(member):
 		print "processing the following line:"
 		print line
 
-		variants_counter = variants_counter + 1; 
+		variant_id = variant_id + 1; 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
 		winpos = pos-start
 		offset_1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
@@ -131,7 +131,8 @@ def VCFtoFASTA(member):
 			actual_delta = new_len - old_len
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
 			assert(ind1[winpos] == actual_delta)	
-			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [1]*len(ref_seq)
+			assert(variant_id > 0)
+			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq) # was ref_seq. alt_seq keeps used1 aligned to seequence1
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
@@ -141,11 +142,14 @@ def VCFtoFASTA(member):
 			actual_delta = new_len - old_len
 			ind2[winpos] = len(alt_seq)-len(ref_seq)
 			assert(actual_delta == ind2[winpos])
-			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [1]*len(ref_seq)
+			assert(variant_id > 0)
+			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq) # same as above
 
-	print "We processed :"+str(variants_counter)+" variants"
+	print "We processed :"+str(variant_id)+" variants"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
 	gappedsequence2 = list(sequence2)
+	var_map1 = list(used1)	
+	var_map2 = list(used2)	
 	happening = 0
 	gaps1 = 0
 	gaps2 = 0
@@ -156,11 +160,20 @@ def VCFtoFASTA(member):
 		if ind1[nucind]>0: #there was an insertion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
+			# insert the var_id also not only to the refseq affected but also to the altseq	inserted aswell.
+			# the other sequence is filled with zeros.
+			var_id = var_map1[nucind+gaps1];
+			#var_id = used1[nucind];
+			#assert(var_id != 0)
+			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [var_id]*gaplen
+			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
+
 			gaps2+=gaplen
 			happening+=1
 		if ind1[nucind]<0: #there was a deletion
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
+			#dont need to update var_map: var_id was put in the whole ref_seq. 
 			gaps1+=gaplen	
 			happening+=1
 	gaps1 = 0
@@ -171,6 +184,13 @@ def VCFtoFASTA(member):
 		if ind2[nucind]>0: #there was an insertion
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
+			
+			var_id = var_map2[nucind+gaps2];
+			#var_id = used2[nucind];
+			#assert(var_id != 0)
+			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [var_id]*gaplen
+			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
+
 			gaps1+=gaplen
 			happening+=1
 		if ind2[nucind]<0: #there was a deletion

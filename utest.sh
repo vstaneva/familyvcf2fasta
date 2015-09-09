@@ -2,7 +2,7 @@
 set -o nounset
 set -o errexit
 
-#python mfcVCFtoFASTA.py  family_utest.config
+python mfcVCFtoFASTA.py  family_utest.config
 
 for FILE_NAME in "child_1.fa" "child_2.fa" "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa"
 do
