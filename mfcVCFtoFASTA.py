@@ -72,14 +72,16 @@ def VCFtoFASTA(member):
 	posskipped = 0
 
 	for line in ref:
-		posskipped+=60 #this is how long we assume that a FASTA line is
+		line_length = len(line.strip())
+		print "line length:" + str(line_length)
+		posskipped+=line_length #this is how long we assume that a FASTA line is
 		if posskipped<start:
 			continue
 		refwin+=list(line.strip().upper())
 		if posskipped>finish:
 			break
-	refwin = refwin[(start-1)%60:] #trim chars before the start position
-	refwin = refwin[:-(60-finish%60)] #trim chars after the finish; turns out that if finish%60==0, then refwin has +60 chars
+	refwin = refwin[(start-1)%line_length:] #trim chars before the start position
+	refwin = refwin[:-(line_length-finish%line_length)] #trim chars after the finish; turns out that if finish%line_length==0, then refwin has +line_length chars
 
 	sequence1 = list(refwin) 
 	sequence2 = list(refwin) 
