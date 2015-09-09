@@ -5,5 +5,4 @@ install:
   - sudo apt-get install g++-4.8
 language: python
 script:
-  - python mfcVCFtoFASTA.py family.config
-  - python mfcVCFtoFASTA.py family2.config
+  - python mfcVCFtoFASTA.py family3.config
