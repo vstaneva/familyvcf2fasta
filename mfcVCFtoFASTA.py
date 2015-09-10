@@ -121,6 +121,7 @@ def VCFtoFASTA(member):
 		variant_id = variant_id + 1; 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
 		winpos = pos-start
+		assert(ref_seq == refwin[winpos:winpos+len(ref_seq)])
 		offset_1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
 		offset_2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
 		uscore1 = sum(used1[winpos+offset_1:winpos+len(ref_seq)+offset_1]) #is there anything used in the positions of the variant
@@ -139,6 +140,13 @@ def VCFtoFASTA(member):
 			assert(variant_id > 0)
 
 	print "We processed :"+str(variant_id)+" variants"
+	print "********"
+	print sequence1
+	print sequence2
+	print "********"
+	print ind1
+	print ind2
+	print "********"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
 	gappedsequence2 = list(sequence2)
 	var_map1 = list(used1)	
@@ -160,14 +168,17 @@ def VCFtoFASTA(member):
 			#assert(var_id != 0)
 			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [var_id]*gaplen
 			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
-
+			
+			gaps1+=gaplen
 			gaps2+=gaplen
 			happening+=1
 		if ind1[nucind]<0: #there was a deletion
+			print "Deletion in nucind="+str(nucind)
+			print "Gaps1="+str(gaps1)
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			#dont need to update var_map: var_id was put in the whole ref_seq. 
-			gaps1+=gaplen	
+			#gaps1+=gaplen	#DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
 	gaps1 = 0
 	gaps2 = 0
@@ -185,11 +196,12 @@ def VCFtoFASTA(member):
 			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
 
 			gaps1+=gaplen
+			gaps2+=gaplen
 			happening+=1
 		if ind2[nucind]<0: #there was a deletion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
-			gaps2+=gaplen
+			#gaps2+=gaplen  #DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
 
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)

@@ -25,7 +25,7 @@ do
       echo "and"
       echo "${FULL_NAME_EXP}" 
 
-      #vimdiff ${FULL_NAME_RES} ${FULL_NAME_EXP}
+      vimdiff ${FULL_NAME_RES} ${FULL_NAME_EXP}
       exit 33
     fi
   done
