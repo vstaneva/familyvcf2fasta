@@ -3,13 +3,15 @@ set -o nounset
 set -o errexit
 
 
-for ID in "1"  "2"
+#for ID in "1"  "2" "3"
+for ID in "3"
 do
   echo "***********"
   echo "Runing test n$ID:"
   echo "***********"
-  python mfcVCFtoFASTA.py  family_utest_${ID}.config
   FOLDER="./utest/case_${ID}"
+  rm -f ${FOLDER}/result/*
+  python mfcVCFtoFASTA.py  family_utest_${ID}.config
   for FILE_NAME in "child_1.fa" "child_2.fa" "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa"
   do
     FULL_NAME_RES=${FOLDER}/result/${FILE_NAME}
@@ -25,7 +27,7 @@ do
       echo "and"
       echo "${FULL_NAME_EXP}" 
 
-      vimdiff ${FULL_NAME_RES} ${FULL_NAME_EXP}
+      #vimdiff ${FULL_NAME_RES} ${FULL_NAME_EXP}
       exit 33
     fi
   done
