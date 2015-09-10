@@ -1,0 +1,2 @@
+Simpler test.
+Validates reads and writes. It needs to read fasta files longer that 60 chars.
