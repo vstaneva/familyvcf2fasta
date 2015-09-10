@@ -73,7 +73,6 @@ def VCFtoFASTA(member):
 
 	for line in ref:
 		line_length = len(line.strip())
-		print "line length:" + str(line_length)
 		posskipped+=line_length #this is how long we assume that a FASTA line is
 		if posskipped<start:
 			continue
@@ -127,25 +126,17 @@ def VCFtoFASTA(member):
 		uscore1 = sum(used1[winpos+offset_1:winpos+len(ref_seq)+offset_1]) #is there anything used in the positions of the variant
 		uscore2 = sum(used2[winpos+offset_2:winpos+len(ref_seq)+offset_2])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
-			old_len = len(sequence1)
 			sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
-			new_len = len(sequence1)
-			actual_delta = new_len - old_len
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
-			assert(ind1[winpos] == actual_delta)	
+			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
 			assert(variant_id > 0)
-			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq) # was ref_seq. alt_seq keeps used1 aligned to seequence1
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
-			old_len = len(sequence2)
 			sequence2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = list(alt_seq)
-			new_len = len(sequence2)
-			actual_delta = new_len - old_len
 			ind2[winpos] = len(alt_seq)-len(ref_seq)
-			assert(actual_delta == ind2[winpos])
+			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(ref_seq) # same as above
 			assert(variant_id > 0)
-			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq) # same as above
 
 	print "We processed :"+str(variant_id)+" variants"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
@@ -206,6 +197,10 @@ def VCFtoFASTA(member):
 	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
+	print "______"
+	print gappedsequence1
+	print gappedsequence2
+	print "______"
 
 	vcffile.close()
 	ref.close()
