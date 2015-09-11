@@ -3,6 +3,14 @@ import sys
 import subprocess
 import time
 
+def printMarks(length):
+	ans = [" "]*length;
+	for i in range (length/10):
+		ans[i*10] ="*"
+	print "".join(map(str,ans))
+	
+
+
 def prepMember(member, configpath):
 	"""
 	Assuming configpath is a config file and member is either Child,
@@ -124,38 +132,46 @@ def VCFtoFASTA(member):
 		assert(ref_seq == refwin[winpos:winpos+len(ref_seq)])
 		offset_1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
 		offset_2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
-		uscore1 = sum(used1[winpos+offset_1:winpos+len(ref_seq)+offset_1]) #is there anything used in the positions of the variant
-		uscore2 = sum(used2[winpos+offset_2:winpos+len(ref_seq)+offset_2])
+		#uscore1 = sum(used1[winpos+offset_1:winpos+len(ref_seq)+offset_1]) #is there anything used in the positions of the variant
+		#uscore2 = sum(used2[winpos+offset_2:winpos+len(ref_seq)+offset_2])
+		uscore1 = sum(used1[winpos:winpos+len(ref_seq)]) #is there anything used in the positions of the variant
+		uscore2 = sum(used2[winpos:winpos+len(ref_seq)])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
 			print "applied to seq1"
 			sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
-			used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
+			#used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
+			#used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
+			used1[winpos:winpos+len(ref_seq)] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
 			assert(variant_id > 0)
 			if not homozygous: #we wouldn't want to add to the second sequence
 				continue
 		if uscore2 == 0:
 			print "applied to seq2"
-			print "w:" + str(winpos)
+			print "winpos:" + str(winpos)
 			print "off:" +str(offset_1)
 			print str(winpos+offset_1)
 			print str(winpos+len(ref_seq)+offset_1)
 			sequence2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = list(alt_seq)
 			ind2[winpos] = len(alt_seq)-len(ref_seq)
-			used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(ref_seq) # same as above
+			print "ind2[winpos]:="+str(ind2[winpos])
+			#used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(ref_seq) # same as above
+			#used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq) # same as above
+			used2[winpos:winpos+len(ref_seq)] = [variant_id]*len(ref_seq) # same as above
 			assert(variant_id > 0)
 
 	print "We processed :"+str(variant_id)+" variants"
 	print "********"
+	printMarks(len(used1))
 	print "".join(map(str,used1))
 	print "".join(map(str,used2))
 	print "********"
-	print "********"
+	printMarks(len(used1))
 	print "".join(sequence1)
 	print "".join(sequence2)
 	print "********"
-	#print ind1
-	#print ind2
+	print "".join(map(str,ind1))
+	print "".join(map(str,ind2))
 	print "********"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
 	gappedsequence2 = list(sequence2)
@@ -169,6 +185,11 @@ def VCFtoFASTA(member):
 	for nucind in xrange(len(ind1)):
 		gaplen = ind1[nucind]*((-1) if ind1[nucind]<0 else 1)
 		if ind1[nucind]>0: #there was an insertion
+			print "Insertion in S1"
+			print "CURRGaplen:"+str(gaplen)
+			print "Nucind:"+str(nucind)
+			print "PrevGap2:"+str(gaps2)
+			print "---"
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			# insert the var_id also not only to the refseq affected but also to the altseq	inserted aswell.
@@ -183,20 +204,22 @@ def VCFtoFASTA(member):
 			gaps2+=gaplen
 			happening+=1
 		if ind1[nucind]<0: #there was a deletion
-			print "Deletion in nucind="+str(nucind)
-			print "Gaps1="+str(gaps1)
+			#print "Deletion in nucind="+str(nucind)
+			#print "Gaps1="+str(gaps1)
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			#dont need to update var_map: var_id was put in the whole ref_seq. 
 			#gaps1+=gaplen	#DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
-	gaps1 = 0
-	gaps2 = 0
-	#put gaps with respect to the second sequence
-	for nucind in xrange(len(ind2)):
+	# put gaps with respect to the second sequence
+	# NEEDS TO BE DONE IN THE SAME CYCLE TO KEEP THE GAPS CORRECT
 		gaplen = ind2[nucind]*((-1) if ind2[nucind]<0 else 1)
 		if ind2[nucind]>0: #there was an insertion
 			#add gaps to sequence1 and make sure ind is OK too
+			print "Insertion in S2"
+			print "CURRGaplen:"+str(gaplen)
+			print "Nucind:"+str(nucind)
+			print "PrevGap2:"+str(gaps2)
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			
 			var_id = var_map2[nucind+gaps2];
@@ -207,6 +230,7 @@ def VCFtoFASTA(member):
 
 			gaps1+=gaplen
 			gaps2+=gaplen
+			print "NewGap2:"+str(gaps2)
 			happening+=1
 		if ind2[nucind]<0: #there was a deletion
 			#add gaps to sequence2 and make sure ind is OK too
@@ -220,6 +244,7 @@ def VCFtoFASTA(member):
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
 	print "______"
+	printMarks(len(used1))
 	print "".join(gappedsequence1)
 	print "".join(gappedsequence2)
 	print "______"

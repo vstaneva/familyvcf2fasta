@@ -3,8 +3,8 @@ set -o nounset
 set -o errexit
 
 
-#for ID in "1"  "2" "3"
-for ID in "3"
+for ID in "1"  "2" "3"
+#for ID in "3"
 do
   echo "***********"
   echo "Runing test n$ID:"
@@ -12,11 +12,10 @@ do
   FOLDER="./utest/case_${ID}"
   rm -f ${FOLDER}/result/*
   python mfcVCFtoFASTA.py  family_utest_${ID}.config
-  for FILE_NAME in "child_1.fa" "child_2.fa" "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa"
+  for FILE_NAME in "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa" "child_1.fa" "child_2.fa"
   do
     FULL_NAME_RES=${FOLDER}/result/${FILE_NAME}
     FULL_NAME_EXP=${FOLDER}/expected_result/${FILE_NAME}
-    #if diff ./utest/case_${ID}/expected_result/child_1.fa  ./utest/case_${ID}/result/child_1.fa > /dev/null
     if diff ${FULL_NAME_RES} ${FULL_NAME_EXP} > /dev/null
     then
       echo "$FILE_NAME equals expected"
