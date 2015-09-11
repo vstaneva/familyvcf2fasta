@@ -1,2 +1,3 @@
->hg19|chromosome 99|start pos 101|end pos 139|variants from utest/case_2/father.vcf|first sequence
-AAAAA---GNCCCCC-----TTTTNNC-----NCNNNNN
+>hg19|chromosome 99|start pos 101|end pos 198|variants from utest/case_3/father.vcf|first sequence
+ATAAT-----CAGGGGACCCCCCCGGGGNNGNN-----NGACAATT----AAAATTTC--
+----GCCTTTTTTTCCGCGAAAAANCTCTCTCTCTNNNNAAATACCCAAGGGA

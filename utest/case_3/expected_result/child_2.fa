@@ -1,2 +1,3 @@
->hg19|chromosome 99|start pos 101|end pos 139|variants from utest/case_2/child.vcf|second sequence
-AA----AAANNNGNCCCCCNNACGTTTTNNCNNNNNNCNNNNN
+>hg19|chromosome 99|start pos 101|end pos 198|variants from utest/case_3/child.vcf|second sequence
+ATAATTCCGACCCCTAGGGGNNNNNNNNNNNGACAATTAAAGAAAATTTCTAGGGATNNN
+NNNNNNNGGGAAAAAAAAANA-----GAAANNNNAAAAAA--AAAAAA

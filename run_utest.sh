@@ -4,7 +4,6 @@ set -o errexit
 
 
 for ID in "1"  "2" "3"
-#for ID in "3"
 do
   echo "***********"
   echo "Runing test n$ID:"
@@ -33,6 +32,9 @@ do
   echo "test n$ID PASS"
   echo "***********"
 done
+
+# TODO: Incorporate 
+# staff like - python mfcVCFtoFASTA.py family3.config ?
 echo " "
 echo "***************************"
 echo "Unit tests succesfully run!"
