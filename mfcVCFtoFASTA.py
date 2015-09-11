@@ -9,7 +9,12 @@ def printMarks(length):
 		ans[i*10] ="*"
 	print "".join(map(str,ans))
 	
-
+def alpha(int_list):
+	ans = ['0']*len(int_list)
+	mapper="0ABCDEFGHIJKLMNPQRSTUVWXYZ"
+	for pos in range(len(int_list)):
+		ans[pos] = mapper[int_list[pos]]
+	return ans
 
 def prepMember(member, configpath):
 	"""
@@ -198,7 +203,9 @@ def VCFtoFASTA(member):
 			#print "Gaps1="+str(gaps1)
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
-			var_map1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
+			var_id = var_map1[nucind+gaps1]
+			assert(var_id != 0)
+			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [var_id]*gaplen  #TODO
 			#dont need to update var_map: var_id was put in the whole ref_seq. 
 			#gaps1+=gaplen	#DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
@@ -208,12 +215,13 @@ def VCFtoFASTA(member):
 		if ind2[nucind]>0: #there was an insertion
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
+			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
 			
 			#var_id = var_map2[nucind+gaps2];
 			#var_id = used2[nucind];
 			#assert(var_id != 0)
 			#var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [var_id]*gaplen
-			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
+			#var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
 
 			gaps1+=gaplen
 			gaps2+=gaplen
@@ -221,7 +229,8 @@ def VCFtoFASTA(member):
 		if ind2[nucind]<0: #there was a deletion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
-			var_map2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
+			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
+			#var_map2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
 			#gaps2+=gaplen  #DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
 
@@ -235,8 +244,8 @@ def VCFtoFASTA(member):
 	print "".join(gappedsequence1)
 	print "".join(gappedsequence2)
 	print "______"
-	print "".join(map(str,var_map1))
-	print "".join(map(str,var_map2))
+	print "".join(map(str,alpha(var_map1)))
+	print "".join(map(str,alpha(var_map2)))
 	print "______"
 
 	vcffile.close()
