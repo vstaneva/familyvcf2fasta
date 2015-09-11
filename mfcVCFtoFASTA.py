@@ -96,6 +96,8 @@ def VCFtoFASTA(member):
 	used2 = [0]*len(refwin) #see above
 	ind1 = [0]*len(refwin) #indicates where are insertions/deletions
 	ind2 = [0]*len(refwin)
+	var_map1 = [0]*len(refwin)
+	var_map2 = [0]*len(refwin)
 
 	homozygous = False #a homozygous variant is applied to both sequences
 
@@ -139,6 +141,7 @@ def VCFtoFASTA(member):
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
 			print "applied to seq1"
 			sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
+			var_map1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq)
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
 			#used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
 			#used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
@@ -148,6 +151,7 @@ def VCFtoFASTA(member):
 				continue
 		if uscore2 == 0:
 			sequence2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = list(alt_seq)
+			var_map2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq)
 			ind2[winpos] = len(alt_seq)-len(ref_seq)
 			#used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(ref_seq) # same as above
 			#used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq) # same as above
@@ -169,8 +173,6 @@ def VCFtoFASTA(member):
 	#print "********"
 	gappedsequence1 = list(sequence1) #in these we put the aligned sequences
 	gappedsequence2 = list(sequence2)
-	var_map1 = list(used1)	
-	var_map2 = list(used2)	
 	happening = 0
 	gaps1 = 0
 	gaps2 = 0
@@ -183,10 +185,9 @@ def VCFtoFASTA(member):
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			# insert the var_id also not only to the refseq affected but also to the altseq	inserted aswell.
 			# the other sequence is filled with zeros.
-			var_id = var_map1[nucind+gaps1];
+			#var_id = var_map1[nucind+gaps1];
 			#var_id = used1[nucind];
 			#assert(var_id != 0)
-			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [var_id]*gaplen
 			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
 			
 			gaps1+=gaplen
@@ -197,6 +198,7 @@ def VCFtoFASTA(member):
 			#print "Gaps1="+str(gaps1)
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
+			var_map1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
 			#dont need to update var_map: var_id was put in the whole ref_seq. 
 			#gaps1+=gaplen	#DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
@@ -207,10 +209,10 @@ def VCFtoFASTA(member):
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			
-			var_id = var_map2[nucind+gaps2];
+			#var_id = var_map2[nucind+gaps2];
 			#var_id = used2[nucind];
 			#assert(var_id != 0)
-			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [var_id]*gaplen
+			#var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [var_id]*gaplen
 			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
 
 			gaps1+=gaplen
@@ -219,6 +221,7 @@ def VCFtoFASTA(member):
 		if ind2[nucind]<0: #there was a deletion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
+			var_map2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
 			#gaps2+=gaplen  #DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
 
@@ -231,6 +234,9 @@ def VCFtoFASTA(member):
 	printMarks(len(used1))
 	print "".join(gappedsequence1)
 	print "".join(gappedsequence2)
+	print "______"
+	print "".join(map(str,var_map1))
+	print "".join(map(str,var_map2))
 	print "______"
 
 	vcffile.close()
