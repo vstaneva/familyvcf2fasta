@@ -2,6 +2,7 @@ import ConfigParser
 import sys
 import subprocess
 import time
+from collections import defaultdict
 
 def printMarks(length):
 	ans = [" "]*length;
@@ -256,7 +257,8 @@ def VCFtoFASTA(member):
 	fasta2.close()
 
 	#here we return the two ind lists
-	return [ind1, ind2]
+	#return [ind1, ind2]
+	return [var_map1, var_map2]
 
 def callSimilarityPhaser(mother, father, child):
 	mother_fasta1 = mother[3]
@@ -269,17 +271,52 @@ def callSimilarityPhaser(mother, father, child):
 	child_fasta2 = child[4]
 
 	print mother_fasta1, mother_fasta2, child_fasta1, child_fasta2
-	subprocess.check_call("make -C phasing_family/src", shell=True)
+	#subprocess.check_call("make -C phasing_family/src", shell=True)
 	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} ".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2), shell=True)
 
 def phasedStringToVCF(child):
+	var_map1 = child[5]
+	var_map2 = child[6]
+	print "".join(map(str,alpha(var_map1)))
+	print "".join(map(str,alpha(var_map2)))
 	stringfile = open("phase_string.txt", "r")
 	phaseString = list(stringfile.read().strip())
-	print phaseString
+	#print phaseString
+	print"****"
+	print "".join(map(str,phaseString))
+	print"****"
 	#get a list of all the occurences of 1 and 0 in the phase string
-	knownPhases = [(i,x) for i,x in enumerate(phaseString) if not x == '?']
-	print knownPhases
-
+	#knownPhases = [(i,x) for i,x in enumerate(phaseString) if not x == '?']
+	#print knownPhases
+	counts = defaultdict(int)
+	for pos in range(len(phaseString)):
+		if (phaseString[pos] != '?'):
+			switch = 0
+			if phaseString[pos] == '1': # From father , 1|0
+				switch = 1
+			elif phaseString[pos] == '0': # From mother, 0|1
+				switch = -1
+			else:
+				raise ValueError("UNKNOWN CHAR IN PHASE STRIGN, ABORTING")
+			#print "At pos:"+str(pos)+" ps:"+str(phaseString[pos]) + " switch ="+str(switch)
+			#print "known"+str(pos)
+			var_id_1 = var_map1[pos]
+			if (var_id_1 != 0):
+				#counts[var_id_1] = counts[var_id_1] + switch
+				counts[var_id_1] += switch
+			
+			var_id_2 = var_map2[pos]
+			if (var_id_2 != 0):
+				counts[var_id_1] -= switch
+	for keys in counts:
+		print "counts["+str(keys)+"]="+str(counts[keys])
+	vcffile = open(child[2], "r")
+	new_vcffile = open(child[2]+".new.vcf", "w")
+	for line in vcffile:
+		if line[0]=='#': #header line
+			continue
+		new_vcffile.write(line)
+	
 def getFamilyFASTA():	
 	try:	
 		configuration = sys.argv[1]
@@ -287,9 +324,9 @@ def getFamilyFASTA():
 		father = prepMember("Father", configuration)
 		child = prepMember("Child", configuration)
 		try: #attach the ind lists for the two FASTA files to the individual
-			child = child + VCFtoFASTA(child)
 			mother = mother +VCFtoFASTA(mother)
 			father = father + VCFtoFASTA(father)
+			child = child + VCFtoFASTA(child)
 		except IOError:
 			print "Please make sure the path to the resulting FASTA file is valid."
 	except IndexError:
