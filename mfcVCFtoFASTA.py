@@ -4,6 +4,7 @@ import subprocess
 import time
 from collections import defaultdict
 
+
 def printMarks(length):
 	ans = [" "]*length;
 	for i in range (length/10):
@@ -109,6 +110,8 @@ def VCFtoFASTA(member):
 
 	#second, we insert the changes from the VCF into the sequences
 	variant_counter = 0
+	hetero_counter = 0
+
 	for line in vcffile:
 		if line[0]=='#': #header line
 			continue
@@ -138,6 +141,8 @@ def VCFtoFASTA(member):
 		variant_counter = variant_counter + 1;
 		variant_id = record_id 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
+		if homozygous == False:
+			hetero_counter += 1
 		winpos = pos-start
 		assert(ref_seq == refwin[winpos:winpos+len(ref_seq)])
 		offset_1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
@@ -167,6 +172,7 @@ def VCFtoFASTA(member):
 			assert(variant_id > 0)
 
 	print "We processed :"+str(variant_counter)+" variants"
+	print "We processed :"+str(hetero_counter)+" heterozygous variants"
 	print "********"
 	#printMarks(len(used1))
 	#print "".join(map(str,used1))
@@ -260,7 +266,7 @@ def VCFtoFASTA(member):
 
 	#here we return the two ind lists
 	#return [ind1, ind2]
-	return [var_map1, var_map2]
+	return [var_map1, var_map2, hetero_counter]
 
 def callSimilarityPhaser(mother, father, child):
 	mother_fasta1 = mother[3]
@@ -281,6 +287,7 @@ def callSimilarityPhaser(mother, father, child):
 def phasedStringToVCF(child):
 	var_map1 = child[5]
 	var_map2 = child[6]
+	hetero_vars_applied = child[7]
 	print "".join(map(str,alpha(var_map1)))
 	print "".join(map(str,alpha(var_map2)))
 	stringfile = open("phase_string.txt", "r")
@@ -316,18 +323,49 @@ def phasedStringToVCF(child):
 		print "counts_dict["+str(keys)+"]="+str(counts_dict[keys])
 	vcffile = open(child[2], "r")
 	new_vcffile = open(child[2]+".new.vcf", "w")
+	
+	right_count = 0
+	wrong_count = 0
+	no_gt_count = 0
 	for line in vcffile:
 		if line[0]=='#': #header line
 			new_vcffile.write(line)
 			continue
 		info = line.split()
 		record_id = int(info[2].strip())
-		if record_id in counts_dict:
-			new_line = phased_line(line, counts_dict[record_id])
-			new_vcffile.write(new_line)
-		else:
+		if record_id not in counts_dict:
 			new_vcffile.write(line)
-
+			continue	
+		# record_id in counts_dict:
+		count = counts_dict[record_id]
+		if count > 0:
+			phase = "1|0"
+			no_phase = "0|1"
+		elif count < 0:
+			phase = "0|1"
+			no_phase = "1|0"
+		else:
+			assert(count == 0)
+			new_vcffile.write(line)
+			continue	
+		info = line.split('\t')
+		real_phase = info[9][0:3]
+		if real_phase == phase:
+			right_count += 1
+		elif real_phase == no_phase:
+			wrong_count += 1
+		else:
+			print "no info from:"+real_phase 
+			print str(len(real_phase))
+			no_gt_count += 1
+		info[9] = phase
+		new_line = '\t'.join(info)
+		new_line += "\n"
+		new_vcffile.write(new_line)
+	print "Correct Phases:" +str(right_count)
+	print "Wrong Phases:" +str(wrong_count)
+	print "Hetero Applied:" +str(hetero_vars_applied)
+	print "Phases with no ground truth info:" + str(no_gt_count) 
 def getFamilyFASTA():	
 	try:	
 		configuration = sys.argv[1]
@@ -345,22 +383,7 @@ def getFamilyFASTA():
 	except:
 		print "The configuration file you selected is invalid."
 		raise
-
 	return (mother, father, child)
-
-def phased_line(line, count):
-	if count > 0:
-		phase = "1|0"
-	elif count < 0:
-		phase = "0|1"
-	else:
-		assert(count == 0)
-		return line
-	info = line.split('\t')
-	info[9] = phase
-	ans = '\t'.join(info)
-	ans += "\n"
-	return ans 
 
 (mother, father, child) = getFamilyFASTA()
 callSimilarityPhaser(mother, father, child)
