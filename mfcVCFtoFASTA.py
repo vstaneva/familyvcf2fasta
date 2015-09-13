@@ -292,7 +292,7 @@ def phasedStringToVCF(child):
 	#get a list of all the occurences of 1 and 0 in the phase string
 	#knownPhases = [(i,x) for i,x in enumerate(phaseString) if not x == '?']
 	#print knownPhases
-	counts = defaultdict(int)
+	counts_dict = defaultdict(int)
 	for pos in range(len(phaseString)):
 		if (phaseString[pos] != '?'):
 			switch = 0
@@ -306,14 +306,14 @@ def phasedStringToVCF(child):
 			#print "known"+str(pos)
 			var_id_1 = var_map1[pos]
 			if (var_id_1 != 0):
-				#counts[var_id_1] = counts[var_id_1] + switch
-				counts[var_id_1] += switch
+				#counts_dict[var_id_1] = counts_dict[var_id_1] + switch
+				counts_dict[var_id_1] += switch
 			
 			var_id_2 = var_map2[pos]
 			if (var_id_2 != 0):
-				counts[var_id_1] -= switch
-	for keys in counts:
-		print "counts["+str(keys)+"]="+str(counts[keys])
+				counts_dict[var_id_1] -= switch
+	for keys in counts_dict:
+		print "counts_dict["+str(keys)+"]="+str(counts_dict[keys])
 	vcffile = open(child[2], "r")
 	new_vcffile = open(child[2]+".new.vcf", "w")
 	for line in vcffile:
@@ -322,9 +322,8 @@ def phasedStringToVCF(child):
 			continue
 		info = line.split()
 		record_id = int(info[2].strip())
-		if record_id in counts:
-			print "updtate:" + str(record_id)
-			new_line = phased_line(line, counts[record_id])
+		if record_id in counts_dict:
+			new_line = phased_line(line, counts_dict[record_id])
 			new_vcffile.write(new_line)
 		else:
 			new_vcffile.write(line)
