@@ -5,12 +5,6 @@ import time
 from collections import defaultdict
 
 
-def printMarks(length):
-	ans = [" "]*length;
-	for i in range (length/10):
-		ans[i*10] ="*"
-	print "".join(map(str,ans))
-	
 def alpha(int_list):
 	ans = ['0']*len(int_list)
 	mapper="0ABCDEFGHIJKLMNPQRSTUVWXYZ"
@@ -136,8 +130,8 @@ def VCFtoFASTA(member):
 		#we are surely in the window
 		#now we check whether the variant is homozygous or heterozygous
 		
-		print "processing the following line:"+str(record_id)
-		print line
+		#print "processing the following line:"+str(record_id)
+		#print line
 		variant_counter = variant_counter + 1;
 		variant_id = record_id 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
@@ -147,17 +141,12 @@ def VCFtoFASTA(member):
 		assert(ref_seq == refwin[winpos:winpos+len(ref_seq)])
 		offset_1 = sum(ind1[:winpos]) #what is the difference in positions between ref and sequence1
 		offset_2 = sum(ind2[:winpos]) #what is the difference in positions between ref and sequence2
-		#uscore1 = sum(used1[winpos+offset_1:winpos+len(ref_seq)+offset_1]) #is there anything used in the positions of the variant
-		#uscore2 = sum(used2[winpos+offset_2:winpos+len(ref_seq)+offset_2])
 		uscore1 = sum(used1[winpos:winpos+len(ref_seq)]) #is there anything used in the positions of the variant
 		uscore2 = sum(used2[winpos:winpos+len(ref_seq)])
 		if uscore1 == 0: #we can add this variant to the 1st FASTA file	
-			print "applied to seq1"
 			sequence1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = list(alt_seq)
 			var_map1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq)
 			ind1[winpos] = len(alt_seq)-len(ref_seq)
-			#used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
-			#used1[winpos+offset_1:winpos+len(ref_seq)+offset_1] = [variant_id]*len(alt_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
 			used1[winpos:winpos+len(ref_seq)] = [variant_id]*len(ref_seq) # val uses ref_seq. alt_seq keeps used1 aligned to seequence1
 			assert(variant_id > 0)
 			if not homozygous: #we wouldn't want to add to the second sequence
@@ -166,19 +155,15 @@ def VCFtoFASTA(member):
 			sequence2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = list(alt_seq)
 			var_map2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq)
 			ind2[winpos] = len(alt_seq)-len(ref_seq)
-			#used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(ref_seq) # same as above
-			#used2[winpos+offset_2:winpos+len(ref_seq)+offset_2] = [variant_id]*len(alt_seq) # same as above
 			used2[winpos:winpos+len(ref_seq)] = [variant_id]*len(ref_seq) # same as above
 			assert(variant_id > 0)
 
-	print "We processed :"+str(variant_counter)+" variants"
-	print "We processed :"+str(hetero_counter)+" heterozygous variants"
-	print "********"
-	#printMarks(len(used1))
+	#print "We processed :"+str(variant_counter)+" variants"
+	#print "We processed :"+str(hetero_counter)+" heterozygous variants"
+	#print "********"
 	#print "".join(map(str,used1))
 	#print "".join(map(str,used2))
 	#print "********"
-	#printMarks(len(used1))
 	#print "".join(sequence1)
 	#print "".join(sequence2)
 	#print "********"
@@ -197,26 +182,17 @@ def VCFtoFASTA(member):
 		if ind1[nucind]>0: #there was an insertion
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
-			# insert the var_id also not only to the refseq affected but also to the altseq	inserted aswell.
-			# the other sequence is filled with zeros.
-			#var_id = var_map1[nucind+gaps1];
-			#var_id = used1[nucind];
-			#assert(var_id != 0)
 			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
 			
 			gaps1+=gaplen
 			gaps2+=gaplen
 			happening+=1
 		if ind1[nucind]<0: #there was a deletion
-			#print "Deletion in nucind="+str(nucind)
-			#print "Gaps1="+str(gaps1)
 			#add gaps to sequence1 and make sure ind is OK too
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			var_id = var_map1[nucind+gaps1]
 			assert(var_id != 0)
 			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [var_id]*gaplen  #TODO
-			#dont need to update var_map: var_id was put in the whole ref_seq. 
-			#gaps1+=gaplen	#DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
 	# put gaps with respect to the second sequence
 	# NEEDS TO BE DONE IN THE SAME CYCLE TO KEEP THE GAPS CORRECT
@@ -226,12 +202,6 @@ def VCFtoFASTA(member):
 			gappedsequence1[nucind+gaps1:nucind+gaps1+1] = gappedsequence1[nucind+gaps1:nucind+gaps1+1] + ['-']*gaplen
 			var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
 			
-			#var_id = var_map2[nucind+gaps2];
-			#var_id = used2[nucind];
-			#assert(var_id != 0)
-			#var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [var_id]*gaplen
-			#var_map1[nucind+gaps1:nucind+gaps1+1] = var_map1[nucind+gaps1:nucind+gaps1+1] + [0]*gaplen
-
 			gaps1+=gaplen
 			gaps2+=gaplen
 			happening+=1
@@ -239,8 +209,6 @@ def VCFtoFASTA(member):
 			#add gaps to sequence2 and make sure ind is OK too
 			gappedsequence2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + ['-']*gaplen
 			var_map2[nucind+gaps2:nucind+gaps2+1] = var_map2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
-			#var_map2[nucind+gaps2:nucind+gaps2+1] = gappedsequence2[nucind+gaps2:nucind+gaps2+1] + [0]*gaplen
-			#gaps2+=gaplen  #DELETIONS DON't NEED TO ADD TO THE GAP, AS THE ORIGINAL SEQUENCE WAS SHORTENED BY THAT
 			happening+=1
 
 	#lastly, we format the aligned sequences as FASTA (60 characters per line)
@@ -248,14 +216,12 @@ def VCFtoFASTA(member):
 	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
-	print "______"
-	printMarks(len(used1))
-	print "".join(gappedsequence1)
-	print "".join(gappedsequence2)
-	print "______"
-	print "".join(map(str,alpha(var_map1)))
-	print "".join(map(str,alpha(var_map2)))
-	print "______"
+	#print "".join(gappedsequence1)
+	#print "".join(gappedsequence2)
+	#print "______"
+	#print "".join(map(str,alpha(var_map1)))
+	#print "".join(map(str,alpha(var_map2)))
+	#print "______"
 
 	vcffile.close()
 	ref.close()
@@ -288,17 +254,8 @@ def phasedStringToVCF(child):
 	var_map1 = child[5]
 	var_map2 = child[6]
 	hetero_vars_applied = child[7]
-	print "".join(map(str,alpha(var_map1)))
-	print "".join(map(str,alpha(var_map2)))
 	stringfile = open("phase_string.txt", "r")
 	phaseString = list(stringfile.read().strip())
-	#print phaseString
-	print"****"
-	print "".join(map(str,phaseString))
-	print"****"
-	#get a list of all the occurences of 1 and 0 in the phase string
-	#knownPhases = [(i,x) for i,x in enumerate(phaseString) if not x == '?']
-	#print knownPhases
 	counts_dict = defaultdict(int)
 	for pos in range(len(phaseString)):
 		if (phaseString[pos] != '?'):
@@ -309,18 +266,14 @@ def phasedStringToVCF(child):
 				switch = -1
 			else:
 				raise ValueError("UNKNOWN CHAR IN PHASE STRIGN, ABORTING")
-			#print "At pos:"+str(pos)+" ps:"+str(phaseString[pos]) + " switch ="+str(switch)
-			#print "known"+str(pos)
 			var_id_1 = var_map1[pos]
 			if (var_id_1 != 0):
-				#counts_dict[var_id_1] = counts_dict[var_id_1] + switch
+				# either adds or decreases one.
 				counts_dict[var_id_1] += switch
 			
 			var_id_2 = var_map2[pos]
 			if (var_id_2 != 0):
 				counts_dict[var_id_1] -= switch
-	for keys in counts_dict:
-		print "counts_dict["+str(keys)+"]="+str(counts_dict[keys])
 	vcffile = open(child[2], "r")
 	new_vcffile = open(child[2]+".new.vcf", "w")
 	
@@ -355,17 +308,17 @@ def phasedStringToVCF(child):
 		elif real_phase == no_phase:
 			wrong_count += 1
 		else:
-			print "no info from:"+real_phase 
-			print str(len(real_phase))
 			no_gt_count += 1
 		info[9] = phase
 		new_line = '\t'.join(info)
 		new_line += "\n"
 		new_vcffile.write(new_line)
+	print "-------------------------------------------" 
 	print "Correct Phases:" +str(right_count)
 	print "Wrong Phases:" +str(wrong_count)
 	print "Hetero Applied:" +str(hetero_vars_applied)
 	print "Phases with no ground truth info:" + str(no_gt_count) 
+	print "-------------------------------------------" 
 def getFamilyFASTA():	
 	try:	
 		configuration = sys.argv[1]
