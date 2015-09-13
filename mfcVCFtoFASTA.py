@@ -108,7 +108,7 @@ def VCFtoFASTA(member):
 	homozygous = False #a homozygous variant is applied to both sequences
 
 	#second, we insert the changes from the VCF into the sequences
-	variant_id = 0
+	variant_counter = 0
 	for line in vcffile:
 		if line[0]=='#': #header line
 			continue
@@ -118,6 +118,8 @@ def VCFtoFASTA(member):
 		pos = int(info[1])
 		if not info[0] == chrom[1:-1]: #wrong chromosome
 			continue
+		
+		record_id = int(info[2].strip())
 		ref_seq = list(info[3].strip())
 		alt_seq = list(info[4].strip())
 		if pos<start: #haven't reached the window yet
@@ -131,10 +133,10 @@ def VCFtoFASTA(member):
 		#we are surely in the window
 		#now we check whether the variant is homozygous or heterozygous
 		
-		print "processing the following line:"
+		print "processing the following line:"+str(record_id)
 		print line
-
-		variant_id = variant_id + 1; 
+		variant_counter = variant_counter + 1;
+		variant_id = record_id 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
 		winpos = pos-start
 		assert(ref_seq == refwin[winpos:winpos+len(ref_seq)])
@@ -164,7 +166,7 @@ def VCFtoFASTA(member):
 			used2[winpos:winpos+len(ref_seq)] = [variant_id]*len(ref_seq) # same as above
 			assert(variant_id > 0)
 
-	print "We processed :"+str(variant_id)+" variants"
+	print "We processed :"+str(variant_counter)+" variants"
 	print "********"
 	#printMarks(len(used1))
 	#print "".join(map(str,used1))
@@ -274,6 +276,8 @@ def callSimilarityPhaser(mother, father, child):
 	#subprocess.check_call("make -C phasing_family/src", shell=True)
 	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} ".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2), shell=True)
 
+
+
 def phasedStringToVCF(child):
 	var_map1 = child[5]
 	var_map2 = child[6]
@@ -314,9 +318,17 @@ def phasedStringToVCF(child):
 	new_vcffile = open(child[2]+".new.vcf", "w")
 	for line in vcffile:
 		if line[0]=='#': #header line
+			new_vcffile.write(line)
 			continue
-		new_vcffile.write(line)
-	
+		info = line.split()
+		record_id = int(info[2].strip())
+		if record_id in counts:
+			print "updtate:" + str(record_id)
+			new_line = phased_line(line, counts[record_id])
+			new_vcffile.write(new_line)
+		else:
+			new_vcffile.write(line)
+
 def getFamilyFASTA():	
 	try:	
 		configuration = sys.argv[1]
@@ -336,6 +348,20 @@ def getFamilyFASTA():
 		raise
 
 	return (mother, father, child)
+
+def phased_line(line, count):
+	if count > 0:
+		phase = "1|0"
+	elif count < 0:
+		phase = "0|1"
+	else:
+		assert(count == 0)
+		return line
+	info = line.split('\t')
+	info[9] = phase
+	ans = '\t'.join(info)
+	ans += "\n"
+	return ans 
 
 (mother, father, child) = getFamilyFASTA()
 callSimilarityPhaser(mother, father, child)
