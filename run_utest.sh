@@ -10,7 +10,8 @@ do
   FOLDER="./utest/case_${ID}"
   rm -f ${FOLDER}/result/*
   python mfcVCFtoFASTA.py  family_utest_${ID}.config
-  for FILE_NAME in "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa" "child_1.fa" "child_2.fa"
+  mv "phase_string.txt" ${FOLDER}/result/
+  for FILE_NAME in "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa" "child_1.fa" "child_2.fa" "phase_string.txt"
   do
     FULL_NAME_RES=${FOLDER}/result/${FILE_NAME}
     FULL_NAME_EXP=${FOLDER}/expected_result/${FILE_NAME}
