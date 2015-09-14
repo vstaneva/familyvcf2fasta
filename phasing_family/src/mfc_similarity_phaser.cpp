@@ -19,6 +19,100 @@ void printUssage() {
   fprintf(stderr, "./mfc_similarity_phaser fatherA.fa fatherB.fa motherA.fa motherB.fa childA.fa childB.fa \n");  // NOLINT
 }
 
+void negate(char * phase_str, size_t len);
+void negate(char * phase_str, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    if (phase_str[i] == '0')
+      phase_str[i] ='1';
+    else if (phase_str[i] == '1')
+      phase_str[i] ='0';
+    else 
+      assert(0);
+  }
+}
+
+char * MultiPassPhaser(char * motherA,
+                       char * motherB,
+                       size_t  mother_len,
+                       char * fatherA,
+                       char * fatherB,
+                       size_t father_len,
+                       char * childA,
+                       char * childB,
+                       size_t child_len,
+                       score_t * score_ans);
+
+char * MultiPassPhaser(char * motherA,
+                       char * motherB,
+                       size_t  mother_len,
+                       char * fatherA,
+                       char * fatherB,
+                       size_t father_len,
+                       char * childA,
+                       char * childB,
+                       size_t child_len,
+                       score_t * score_ans) {
+  char * phase_string_1;
+  char * phase_string_2;
+  score_t score_1;
+  score_t score_2;
+
+  {
+    Phaser * phaser =  new Phaser(motherA, motherB, mother_len,
+                                  fatherA, fatherB, father_len,
+                                  childA, childB, child_len);
+    phaser->SetScoreGap(SCORE_GAP);
+    phaser->SetScoreMismatch(SCORE_MISMATCH);
+    phaser->SetScoreMatch(SCORE_MATCH);
+    score_1 = phaser->similarity_and_phase();
+    phase_string_1 = phaser->GetPhaseString();
+  }
+
+  {
+    // changed order of M and F:
+    Phaser * phaser =  new Phaser(fatherA, fatherB, father_len,
+                                  motherA, motherB, mother_len,
+                                  childA, childB, child_len);
+    phaser->SetScoreGap(SCORE_GAP);
+    phaser->SetScoreMismatch(SCORE_MISMATCH);
+    phaser->SetScoreMatch(SCORE_MATCH);
+    score_2 = phaser->similarity_and_phase();
+    phase_string_2 = phaser->GetPhaseString();
+    negate(phase_string_2, child_len);
+  }
+  
+  if (score_1 != score_2) {
+    fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
+  }
+  assert(score_1 == score_2);
+  
+  int * sum = new int[child_len];
+  
+  char * consensus = new char[child_len];
+  for (size_t i = 0; i < child_len; i++) {
+    //int val = phase_strinf_1[i];
+    //sum[i] = '0' - phase_string_1[i] + '0' - phase_string_2[i];
+    sum[i] = 0;
+    if (phase_string_1[i] == '1') sum[i]++; 
+    if (phase_string_2[i] == '1') sum[i]++; 
+    std::cout << "sum:" << sum[i] << std::endl;
+    
+    int mid = 1;
+    if (sum[i] < mid) {
+      consensus[i] = '0';
+    }
+    else if (sum[i] > mid) {
+      consensus[i] = '1';
+    } else {
+      assert(sum[i] == mid);
+      consensus[i] = '?';
+    }
+  }
+  *score_ans = score_1;
+  return consensus;
+}
+
+
 int main(int argc, char ** argv) {
   if (argc != 7) {
     printUssage();
@@ -61,56 +155,17 @@ int main(int argc, char ** argv) {
   if (child_len != seq_len)
     Debug::AbortPrint("childA and childB have different length. They must be an alignment.\n");
 
-  char * phase_string_1;
-  char * phase_string_2;
-  score_t score_1;
-  score_t score_2;
 
   Utils::StartClock();
-  {
-    Phaser * phaser =  new Phaser(motherA, motherB, mother_len,
-                                  fatherA, fatherB, father_len,
-                                  childA, childB, child_len);
-    phaser->SetScoreGap(SCORE_GAP);
-    phaser->SetScoreMismatch(SCORE_MISMATCH);
-    phaser->SetScoreMatch(SCORE_MATCH);
-    score_1 = phaser->similarity_and_phase();
-    phase_string_1 = phaser->GetPhaseString();
-  }
-
-  {
-    // changed order of M and F:
-    Phaser * phaser =  new Phaser(fatherA, fatherB, father_len,
-                                  motherA, motherB, mother_len,
-                                  childA, childB, child_len);
-    phaser->SetScoreGap(SCORE_GAP);
-    phaser->SetScoreMismatch(SCORE_MISMATCH);
-    phaser->SetScoreMatch(SCORE_MATCH);
-    score_2 = phaser->similarity_and_phase();
-    phase_string_2 = phaser->GetPhaseString();
-  }
-  
+  score_t score;
+  char * consensus = MultiPassPhaser(motherA, motherB, mother_len,
+                                     fatherA, fatherB, father_len,
+                                     childA, childB, child_len, &score);
   double time = Utils::StopClock();
-  if (score_1 != score_2) {
-    fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
-  }
-  assert(score_1 == score_2);
-  
-  char * consensus = new char[child_len];
-  for (size_t i = 0; i < child_len; i++) {
-    if (phase_string_1[i] == '0' && phase_string_2[i] == '1') {
-      consensus[i] = '0';
-    }
-    else if (phase_string_1[i] == '1' && phase_string_2[i] == '0') {
-      consensus[i] = '1';
-    } else {
-      consensus[i] = '?';
-    }
-  }
 
   const char * output_filename = "phase_string.txt";
   Utils::SaveChar(consensus, child_len, (char *)output_filename);
-  printf("Similarity score: %i\n", score_1);
+  printf("Similarity score: %i\n", score);
   printf("Took in: %.2f seconds\n", time);
 
   delete[] motherA;
