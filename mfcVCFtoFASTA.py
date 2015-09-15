@@ -4,12 +4,14 @@ import subprocess
 import time
 from collections import defaultdict
 
-
-def alpha(int_list):
-	ans = ['0']*len(int_list)
+def int_to_alpha(int_val):
 	mapper="0ABCDEFGHIJKLMNPQRSTUVWXYZ"
+	return mapper[int_val]
+
+def str_to_alpha(int_list):
+	ans = ['0']*len(int_list)
 	for pos in range(len(int_list)):
-		ans[pos] = mapper[int_list[pos]]
+		ans[pos] = int_to_alpha(int_list[pos])
 	return ans
 
 def prepMember(member, configpath):
@@ -130,8 +132,9 @@ def VCFtoFASTA(member):
 		#we are surely in the window
 		#now we check whether the variant is homozygous or heterozygous
 		
-		#print "processing the following line:"+str(record_id)
+		#print "processing the following line:"+int_to_alpha(record_id)
 		#print line
+		
 		variant_counter = variant_counter + 1;
 		variant_id = record_id 
 		homozygous = True if info[9][0]=='1' and info[9][2]=='1' else False
@@ -158,9 +161,10 @@ def VCFtoFASTA(member):
 			used2[winpos:winpos+len(ref_seq)] = [variant_id]*len(ref_seq) # same as above
 			assert(variant_id > 0)
 
-	#print "We processed :"+str(variant_counter)+" variants"
-	#print "We processed :"+str(hetero_counter)+" heterozygous variants"
-	#print "********"
+	print "********"
+	print "We processed :"+str(variant_counter)+" variants"
+	print "We processed :"+str(hetero_counter)+" heterozygous variants"
+	print "********"
 	#print "".join(map(str,used1))
 	#print "".join(map(str,used2))
 	#print "********"
@@ -216,12 +220,15 @@ def VCFtoFASTA(member):
 	fasta2.write(">hg19|chromosome "+chrom[1:-1]+"|start pos "+str(start)+"|end pos "+str(finish)+"|variants from "+member[2]+"|second sequence\n")
 	fasta1.write("\n".join("".join(gappedsequence1[i:i+60]) for i in xrange(0, len(gappedsequence1), 60))+"\n")
 	fasta2.write("\n".join("".join(gappedsequence2[i:i+60]) for i in xrange(0, len(gappedsequence2), 60))+"\n")
+	
+	
 	#print "".join(gappedsequence1)
 	#print "".join(gappedsequence2)
 	#print "______"
-	#print "".join(map(str,alpha(var_map1)))
-	#print "".join(map(str,alpha(var_map2)))
+	#print "".join(map(str,str_to_alpha(var_map1)))
+	#print "".join(map(str,str_to_alpha(var_map2)))
 	#print "______"
+
 
 	vcffile.close()
 	ref.close()
@@ -234,7 +241,7 @@ def VCFtoFASTA(member):
 	#return [ind1, ind2]
 	return [var_map1, var_map2, hetero_counter]
 
-def callSimilarityPhaser(mother, father, child):
+def callSimilarityPhaser(mother, father, child, n_paths):
 	mother_fasta1 = mother[3]
 	mother_fasta2 = mother[4]
 
@@ -246,8 +253,7 @@ def callSimilarityPhaser(mother, father, child):
 
 	print mother_fasta1, mother_fasta2, child_fasta1, child_fasta2
 	#subprocess.check_call("make -C phasing_family/src", shell=True)
-	quad_pass = 0;
-	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} {6}".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2, quad_pass), shell=True)
+	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} {6}".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2, n_paths), shell=True)
 
 
 
@@ -305,6 +311,12 @@ def phasedStringToVCF(child):
 			continue	
 		info = line.split('\t')
 		real_phase = info[9][0:3]
+		homozygous = True if real_phase[0]=='1' and real_phase[2]=='1' else False
+		if homozygous:
+			new_vcffile.write(line)
+			continue
+		
+		
 		if real_phase == phase:
 			right_count += 1
 		elif real_phase == no_phase:
@@ -318,7 +330,7 @@ def phasedStringToVCF(child):
 	print "-------------------------------------------" 
 	print "Correct Phases:" +str(right_count)
 	print "Wrong Phases:" +str(wrong_count)
-	print "Phases with no ground truth info:" + str(no_gt_count) 
+	print "Phased Variations  with no ground truth info:" + str(no_gt_count) 
 	print "-------------------------------------------" 
 	print "Hetero Vars Applied:" +str(hetero_vars_applied)
 	print "-------------------------------------------" 
@@ -342,7 +354,13 @@ def getFamilyFASTA():
 	return (mother, father, child)
 
 (mother, father, child) = getFamilyFASTA()
-callSimilarityPhaser(mother, father, child)
+if (len(sys.argv) == 2):
+	n_paths = 2
+	print "Using 2-paths, default mode"
+else:
+	n_paths = sys.argv[2]
+	print "Using " +str(n_paths) + " paths."
+callSimilarityPhaser(mother, father, child, n_paths)
 phasedStringToVCF(child)
 
 

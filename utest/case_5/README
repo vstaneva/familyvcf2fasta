@@ -1,0 +1,5 @@
+Make sure that homozygous variants are not phased.
+
+Also: Note that is not true that the liberal method (n_paths = 1) will always resolve more phases:
+it can oocur that the choosen path add zeros to the count of a variant that had more 1s and now
+count = 0.

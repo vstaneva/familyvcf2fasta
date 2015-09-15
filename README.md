@@ -8,4 +8,7 @@
 
 
 Known Issues
-* We rely on vcf unique identifiers, if they are not present, the behavior is undefined.
+	*Improve error messages. Sometimes worng problem is blamed.
+  *The new vcf deletes any info that followed the genotype
+	* We dont handle variantions having a , in the alt value. We should.
+  *We rely on vcf unique identifiers, if they are not present, the behavior is undefined.

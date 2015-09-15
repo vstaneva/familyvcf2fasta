@@ -16,7 +16,7 @@ bool verbose = false;
 void printUssage();
 void printUssage() {
   fprintf(stderr, "Ussage:\n");
-  fprintf(stderr, "./mfc_similarity_phaser fatherA.fa fatherB.fa motherA.fa motherB.fa childA.fa childB.fa \n");  // NOLINT
+  fprintf(stderr, "./mfc_similarity_phaser fatherA.fa fatherB.fa motherA.fa motherB.fa childA.fa childB.fa n_paths\n");  // NOLINT
 }
 
 void negate(char * phase_str, size_t len);
@@ -40,7 +40,7 @@ char * MultiPassPhaser(char * motherA,
                        char * childA,
                        char * childB,
                        size_t child_len,
-                       bool quad_pass,
+                       int n_paths,
                        score_t * score_ans);
 
 char * MultiPassPhaser(char * motherA,
@@ -52,7 +52,7 @@ char * MultiPassPhaser(char * motherA,
                        char * childA,
                        char * childB,
                        size_t child_len,
-                       bool quad_pass,
+                       int n_paths,
                        score_t * score_ans) {
   char * phase_string_1;
   char * phase_string_2;
@@ -71,6 +71,8 @@ char * MultiPassPhaser(char * motherA,
     phaser->SetScoreMatch(SCORE_MATCH);
     score_1 = phaser->similarity_and_phase();
     phase_string_1 = phaser->GetPhaseString();
+    if (n_paths == 1) 
+      return phase_string_1;
   }
 
   {
@@ -89,7 +91,7 @@ char * MultiPassPhaser(char * motherA,
     fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
   }
 
-  if (quad_pass) {
+  if (n_paths == 4) {
     {
       Phaser * phaser =  new Phaser(motherA, motherB, mother_len,
                                     fatherA, fatherB, father_len,
@@ -119,19 +121,16 @@ char * MultiPassPhaser(char * motherA,
     if (score_1 != score_4) {
       fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
     }
-
   } 
   
   int * sum = new int[child_len];
   
   char * consensus = new char[child_len];
   for (size_t i = 0; i < child_len; i++) {
-    //int val = phase_strinf_1[i];
-    //sum[i] = '0' - phase_string_1[i] + '0' - phase_string_2[i];
     sum[i] = 0;
     if (phase_string_1[i] == '1') sum[i]++; 
     if (phase_string_2[i] == '1') sum[i]++; 
-    if (quad_pass) {
+    if (n_paths == 4) {
       if (phase_string_3[i] == '1') sum[i]++; 
       if (phase_string_4[i] == '1') sum[i]++; 
     }
@@ -139,7 +138,7 @@ char * MultiPassPhaser(char * motherA,
     //  std::cout << "sum:" << sum[i] << std::endl;
     
     int mid = 1;
-    if (quad_pass) {
+    if (n_paths ==4 ) {
       mid = 2;
     }
     if (sum[i] < mid) {
@@ -199,19 +198,20 @@ int main(int argc, char ** argv) {
   if (child_len != seq_len)
     Debug::AbortPrint("childA and childB have different length. They must be an alignment.\n");
 
-  assert(argv[7][0] == '0' || argv[7][1] == '1');
-  bool quad_pass = false; 
-  if (argv[7][0] == '1') {
-    std::cout << "quad pass will be used" << std::endl;
-    quad_pass = true;
+  if (!(argv[7][0] == '1' || argv[7][0] == '2' || argv[7][0] == '4')) {
+    std::cout << " n_paths must be 1, 2 or 4" << std::endl;
+    return 33;
   }
+  
+  int n_paths = atoi(argv[7]);
+  std::cout << n_paths << " paths will be used" << std::endl;
 
   Utils::StartClock();
   score_t score;
   char * consensus = MultiPassPhaser(motherA, motherB, mother_len,
                                      fatherA, fatherB, father_len,
                                      childA, childB, child_len, 
-                                     quad_pass, &score);
+                                     n_paths, &score);
   double time = Utils::StopClock();
 
   const char * output_filename = "phase_string.txt";
