@@ -10,7 +10,7 @@ do
   FOLDER="./utest/case_${ID}"
   rm -f ${FOLDER}/result/*
   # N_PATHS = 2 by default
-  python mfcVCFtoFASTA.py  family_utest_${ID}.config 
+  python mfcVCFtoFASTA.py  ./utest/family_utest_${ID}.config 
   #python mfcVCFtoFASTA.py  family_utest_${ID}.config  1
   mv "phase_string.txt" ${FOLDER}/result/
   for FILE_NAME in "father_1.fa" "father_2.fa" "mother_1.fa" "mother_2.fa" "child_1.fa" "child_2.fa" "phase_string.txt"
@@ -64,7 +64,7 @@ do
   rm -f ${FOLDER}/result/*
   # N_PATHS = 2 by default
   #python mfcVCFtoFASTA.py  family_utest_${ID}.config 
-  python mfcVCFtoFASTA.py  family_utest_${ID}.config  1
+  python mfcVCFtoFASTA.py  ./utest/family_utest_${ID}.config  1
   for FILE_NAME in "child.vcf.new.vcf"
   do
     FULL_NAME_RES=${FOLDER}/${FILE_NAME}
@@ -88,6 +88,7 @@ do
   echo "***********"
 done
 
+rm -f phase_string.txt 
 
 echo " "
 echo "***************************"
