@@ -40,6 +40,7 @@ char * MultiPassPhaser(char * motherA,
                        char * childA,
                        char * childB,
                        size_t child_len,
+                       bool quad_pass,
                        score_t * score_ans);
 
 char * MultiPassPhaser(char * motherA,
@@ -51,12 +52,16 @@ char * MultiPassPhaser(char * motherA,
                        char * childA,
                        char * childB,
                        size_t child_len,
+                       bool quad_pass,
                        score_t * score_ans) {
   char * phase_string_1;
   char * phase_string_2;
+  char * phase_string_3;
+  char * phase_string_4;
   score_t score_1;
   score_t score_2;
-
+  score_t score_3;
+  score_t score_4;
   {
     Phaser * phaser =  new Phaser(motherA, motherB, mother_len,
                                   fatherA, fatherB, father_len,
@@ -80,11 +85,42 @@ char * MultiPassPhaser(char * motherA,
     phase_string_2 = phaser->GetPhaseString();
     negate(phase_string_2, child_len);
   }
-  
   if (score_1 != score_2) {
     fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
   }
-  assert(score_1 == score_2);
+
+  if (quad_pass) {
+    {
+      Phaser * phaser =  new Phaser(motherA, motherB, mother_len,
+                                    fatherA, fatherB, father_len,
+                                    childB, childA, child_len);
+      phaser->SetScoreGap(SCORE_GAP);
+      phaser->SetScoreMismatch(SCORE_MISMATCH);
+      phaser->SetScoreMatch(SCORE_MATCH);
+      score_3 = phaser->similarity_and_phase();
+      phase_string_3 = phaser->GetPhaseString();
+      negate(phase_string_3, child_len);
+    }
+    if (score_1 != score_3) {
+      fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
+    }
+
+    {
+      // changed order of M and F:
+      Phaser * phaser =  new Phaser(fatherA, fatherB, father_len,
+                                    motherA, motherB, mother_len,
+                                    childB, childA, child_len);
+      phaser->SetScoreGap(SCORE_GAP);
+      phaser->SetScoreMismatch(SCORE_MISMATCH);
+      phaser->SetScoreMatch(SCORE_MATCH);
+      score_4 = phaser->similarity_and_phase();
+      phase_string_4 = phaser->GetPhaseString();
+    }
+    if (score_1 != score_4) {
+      fprintf(stderr,"WARNING: Different scores after changing the order of params, this should not occur\n");
+    }
+
+  } 
   
   int * sum = new int[child_len];
   
@@ -95,9 +131,17 @@ char * MultiPassPhaser(char * motherA,
     sum[i] = 0;
     if (phase_string_1[i] == '1') sum[i]++; 
     if (phase_string_2[i] == '1') sum[i]++; 
-    std::cout << "sum:" << sum[i] << std::endl;
+    if (quad_pass) {
+      if (phase_string_3[i] == '1') sum[i]++; 
+      if (phase_string_4[i] == '1') sum[i]++; 
+    }
+    //if (sum  == 3)
+    //  std::cout << "sum:" << sum[i] << std::endl;
     
     int mid = 1;
+    if (quad_pass) {
+      mid = 2;
+    }
     if (sum[i] < mid) {
       consensus[i] = '0';
     }
@@ -114,7 +158,7 @@ char * MultiPassPhaser(char * motherA,
 
 
 int main(int argc, char ** argv) {
-  if (argc != 7) {
+  if (argc != 8) {
     printUssage();
     return EXIT_FAILURE;
   }
@@ -155,12 +199,19 @@ int main(int argc, char ** argv) {
   if (child_len != seq_len)
     Debug::AbortPrint("childA and childB have different length. They must be an alignment.\n");
 
+  assert(argv[7][0] == '0' || argv[7][1] == '1');
+  bool quad_pass = false; 
+  if (argv[7][0] == '1') {
+    std::cout << "quad pass will be used" << std::endl;
+    quad_pass = true;
+  }
 
   Utils::StartClock();
   score_t score;
   char * consensus = MultiPassPhaser(motherA, motherB, mother_len,
                                      fatherA, fatherB, father_len,
-                                     childA, childB, child_len, &score);
+                                     childA, childB, child_len, 
+                                     quad_pass, &score);
   double time = Utils::StopClock();
 
   const char * output_filename = "phase_string.txt";

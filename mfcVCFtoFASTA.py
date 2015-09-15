@@ -246,7 +246,8 @@ def callSimilarityPhaser(mother, father, child):
 
 	print mother_fasta1, mother_fasta2, child_fasta1, child_fasta2
 	#subprocess.check_call("make -C phasing_family/src", shell=True)
-	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} ".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2), shell=True)
+	quad_pass = 0;
+	subprocess.check_call("phasing_family/src/mfc_similarity_phaser {0} {1} {2} {3} {4} {5} {6}".format(mother_fasta1, mother_fasta2, father_fasta1, father_fasta2, child_fasta1, child_fasta2, quad_pass), shell=True)
 
 
 
@@ -274,6 +275,7 @@ def phasedStringToVCF(child):
 			var_id_2 = var_map2[pos]
 			if (var_id_2 != 0):
 				counts_dict[var_id_1] -= switch
+	print "Dict contains: " + str(len(counts_dict)) + " entries"
 	vcffile = open(child[2], "r")
 	new_vcffile = open(child[2]+".new.vcf", "w")
 	
@@ -316,8 +318,9 @@ def phasedStringToVCF(child):
 	print "-------------------------------------------" 
 	print "Correct Phases:" +str(right_count)
 	print "Wrong Phases:" +str(wrong_count)
-	print "Hetero Applied:" +str(hetero_vars_applied)
 	print "Phases with no ground truth info:" + str(no_gt_count) 
+	print "-------------------------------------------" 
+	print "Hetero Vars Applied:" +str(hetero_vars_applied)
 	print "-------------------------------------------" 
 def getFamilyFASTA():	
 	try:	
